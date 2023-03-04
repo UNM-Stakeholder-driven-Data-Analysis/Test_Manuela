@@ -66,7 +66,7 @@ edate <- "2022-10-31"
 fulldischarge <- readNWISdv(siteNumbers = siteNumber,
                             parameterCd = pCode,
                             startDate = sdate,
-                            endDate = edate
+                            endDate = edate,
                             )
 
 # add year and day of year for plotting
@@ -97,11 +97,11 @@ ggplot(data=dis_otowi, aes(x=day, y=X_00060_00003))+
 # can also look at single years in detail
 ggplot(data=dis_otowi, aes(x=Date, y=X_00060_00003))+
   geom_point() + geom_path()+
-  xlim(c(as.Date("2021-01-01"), as.Date("2021-12-31")))+
+  xlim(c(as.Date("2019-01-01"), as.Date("2019-12-31")))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
-####retrieving data USGS for the summer only####
+#### retrieving data USGS for the summer only####
 #use paste function and for loop to get all the dates from only the summer
 #start date
 start.date1 = c(2002:2022)
@@ -132,7 +132,7 @@ discharge <- readNWISdv(siteNumbers = siteNumber,
 #data_nm <- readNWISdata(huc="13020211", parameterCd="00060", service="uv")
 
 
-####check distributions####
+#### check distributions####
 #Otowi
 temp = fulldischarge[fulldischarge$site_no == "08313000",]
 qqPlot(temp$X_00060_00003); shapiro.test(temp$X_00060_00003[0:5000]) # not normal
@@ -159,10 +159,186 @@ summary(temp$X_00060_00003)
 hist(temp$X_00060_00003)
 plot(density(temp$X_00060_00003))
 
-####temporal autocorrelation####
 
-#### retrieving data River Eyes ####
-REyes <- read.csv("Data/DailyOccurrenceDryRm.csv", header = TRUE)
+#### temporal autocorrelation####
+#### Otowi
+### subset data to be one site and one parameter
+temp = fulldischarge[fulldischarge$site_no == alist("08313000") & fulldischarge$X_00060_00003,]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(Date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(Date = seq(min(Date), max(Date), by = "1 day"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = Date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't 
+#include 0 (which is always 1) and shows month #s by default instead of decimal years. 
+#Note the different options for dealing with NAs and how this changes the results 
+#(see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+#### San Acacia
+### subset data to be one site and one parameter
+temp = fulldischarge[fulldischarge$site_no == alist("08354900") & fulldischarge$X_00060_00003,]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(Date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(Date = seq(min(Date), max(Date), by = "1 day"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = Date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't 
+#include 0 (which is always 1) and shows month #s by default instead of decimal years. 
+#Note the different options for dealing with NAs and how this changes the results 
+#(see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+#### spatial autocorrelation ####
+# how many sites are there?
+length(unique(fulldischarge$site_no))
+# 12
+#obtain information available for a particular USGS site (or sites)
+siteInfo <- readNWISsite(c("08313000", "08313150", "08317400", "08319000", "08329918", "08329928", 
+                 "08330000", "08330830", "08330875", "08331160", "08331510", "08332010", 
+                 "08354900"))
+#merge the coordinates to my full data frame
+fulldischarge <- merge(fulldischarge, siteInfo[,c("site_no", "lat_va")], by = "site_no", all.x = TRUE)
+fulldischarge <- merge(fulldischarge, siteInfo[,c("site_no", "long_va")], by = "site_no", all.x = TRUE)
+
+### winter day 2019
+dat_winter = fulldischarge[fulldischarge$Date >= as.Date("2019-02-01") &
+                           fulldischarge$Date < as.Date("2019-02-02"),]
+temp = dat_winter %>%  filter(X_00060_00003 %in% dat_winter)
+
+## Moran.I winter 2019
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(dat_winter$long_va, dat_winter$lat_va)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(dat_winter$X_00060_00003, dists.inv)
+
+#### spring day 2019
+dat_spring = fulldischarge[fulldischarge$Date >= as.Date("2019-04-01") &
+                             fulldischarge$Date < as.Date("2019-04-02"),]
+
+## Moran.I spring 
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(dat_spring$long_va, dat_spring$lat_va)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(dat_spring$X_00060_00003, dists.inv)
+
+#### fall day 2019
+dat_fall = fulldischarge[fulldischarge$Date >= as.Date("2019-10-01") &
+                             fulldischarge$Date < as.Date("2019-10-02"),]
+
+## Moran.I fall
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(dat_fall$long_va, dat_fall$lat_va)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(dat_fall$X_00060_00003, dists.inv)
+
+#### Monsoon day 2019
+dat_monsoon = fulldischarge[fulldischarge$Date >= as.Date("2019-06-01") &
+                           fulldischarge$Date < as.Date("2019-06-02"),]
+
+## Moran.I Monsoon
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(dat_monsoon$long_va, dat_monsoon$lat_va)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(dat_monsoon$X_00060_00003, dists.inv)
+
+## Mantel test winter
+# generate spatial distance matrix
+site_dists = dist(cbind(dat_winter$long_va, dat_winter$lat_va))
+# generate response distance matrix 
+resp_dists = dist(dat_winter$X_00060_00003)
+# run Mantel test
+mantel.rtest(site_dists, resp_dists, nrepet = 9999)
+
+
+## Mantel test spring
+# generate spatial distance matrix
+site_dists = dist(cbind(dat_spring$long_va, dat_spring$lat_va))
+# generate response distance matrix 
+resp_dists = dist(dat_spring$X_00060_00003)
+# run Mantel test
+mantel.rtest(site_dists, resp_dists, nrepet = 9999)
+
+## Mantel test fall
+# generate spatial distance matrix
+site_dists = dist(cbind(dat_fall$long_va, dat_fall$lat_va))
+# generate response distance matrix 
+resp_dists = dist(dat_fall$X_00060_00003)
+# run Mantel test
+mantel.rtest(site_dists, resp_dists, nrepet = 9999)
+
+## Mantel test Monsoon
+# generate spatial distance matrix
+site_dists = dist(cbind(dat_monsoon$long_va, dat_monsoon$lat_va))
+# generate response distance matrix 
+resp_dists = dist(dat_monsoon$X_00060_00003)
+# run Mantel test
+mantel.rtest(site_dists, resp_dists, nrepet = 9999)
+# if 'observation' is low (negative) there is no correlation between the distance matrices
+# if p value if high, it suggests that they are NOT correlated
+# Based on this test, there is detectable in correlation each season 
+# since p-values are small and observations are high.
+
+## Map
+proj = CRS("+proj=longlat +datum=WGS84")
+temp_spatial  <- SpatialPointsDataFrame(coords= cbind(dat_monsoon$long_va, dat_monsoon$lat_va),
+                                        data = as.data.frame(cbind(dat_monsoon$site_no, dat_monsoon$X_00060_00003)),
+                                        proj4string = proj)
+plot(temp_spatial)
+
+
+
+
 
 
 
