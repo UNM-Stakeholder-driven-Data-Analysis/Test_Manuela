@@ -73,11 +73,10 @@ fulldischarge <- readNWISdv(siteNumbers = siteNumber,
 fulldischarge$year = lubridate::year(fulldischarge$Date)
 fulldischarge$day = lubridate::yday(fulldischarge$Date)
 
-#get something... check this again
-with(fulldischarge, table(site_no, X_00060_00003))
-range(with(fulldischarge, table(site_no, X_00060_00003)))
+#are there any missing values?
+sum(is.na(fulldischarge$X_00060_00003)) #no
 
-#separate data set in sites for plotting
+#separate data set by sites for plotting for Otowi
 dis_otowi <- 
   fulldischarge %>% 
   filter(site_no=="08319000") %>%
@@ -97,7 +96,31 @@ ggplot(data=dis_otowi, aes(x=day, y=X_00060_00003))+
 # can also look at single years in detail
 ggplot(data=dis_otowi, aes(x=Date, y=X_00060_00003))+
   geom_point() + geom_path()+
-  xlim(c(as.Date("2019-01-01"), as.Date("2019-12-31")))+
+  xlim(c(as.Date("2019-04-01"), as.Date("2019-10-31")))+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+
+#separate data set by sites for plotting for San Acacia
+dis_sanacacia <- 
+  fulldischarge %>% 
+  filter(site_no=="08354900") %>%
+  arrange(Date)
+
+# add year and day of year for plotting Just did that for whole dataset
+dis_sanacacia$year = lubridate::year(dis_sanacacia$Date)
+dis_sanacacia$day = lubridate::yday(dis_sanacacia$Date)
+
+# plot discharge by year 
+ggplot(data=dis_sanacacia, aes(x=day, y=X_00060_00003))+
+  geom_point() + geom_path()+
+  facet_wrap(~year, scales="free_y")+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+
+# can also look at single years in detail
+ggplot(data=dis_sanacacia, aes(x=Date, y=X_00060_00003))+
+  geom_point() + geom_path()+
+  xlim(c(as.Date("2019-04-01"), as.Date("2019-10-31")))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
@@ -142,6 +165,9 @@ qqPlot(temp$X_00060_00003); shapiro.test(temp$X_00060_00003[0:5000]) # not norma
 #Cochiti
 temp = fulldischarge[fulldischarge$site_no == "08317400",]
 qqPlot(temp$X_00060_00003); shapiro.test(temp$X_00060_00003[0:5000]) # not normal
+#San Acacia
+temp = fulldischarge[fulldischarge$site_no == "08354900",]
+qqPlot(temp$X_00060_00003); shapiro.test(temp$X_00060_00003[0:5000]) # not normal
 
 #Otowi
 temp = fulldischarge[fulldischarge$site_no == "08313000",]
@@ -158,6 +184,37 @@ temp = fulldischarge[fulldischarge$site_no == "08317400",]
 summary(temp$X_00060_00003)
 hist(temp$X_00060_00003)
 plot(density(temp$X_00060_00003))
+#San Acacia
+temp = fulldischarge[fulldischarge$site_no == "08354900",]
+summary(temp$X_00060_00003)
+hist(temp$X_00060_00003)
+plot(density(temp$X_00060_00003))
+
+# my data is not normal!
+# this looks like a lognormal, Gamma, or Weibull distribution
+# it is bounded above zero and is right-skewed
+# what happens if I log-transform it?
+
+#otowi
+temp = fulldischarge[fulldischarge$site_no == "08313000",]
+qqPlot(log10(temp$X_00060_00003)); shapiro.test(log10(temp$X_00060_00003[0:5000]))
+#white rock
+temp = fulldischarge[fulldischarge$site_no == "08313150",]
+qqPlot(log10(temp$X_00060_00003)); shapiro.test(log10(temp$X_00060_00003))
+#cochiti
+temp = fulldischarge[fulldischarge$site_no == "08317400",]
+qqPlot(log10(temp$X_00060_00003)); shapiro.test(log10(temp$X_00060_00003[0:5000]))
+#san acacia
+temp = fulldischarge[fulldischarge$site_no == "08354900",]
+qqPlot(log10(temp$X_00060_00003[0:5000])); shapiro.test(log10(temp$X_00060_00003[0:5000]))
+#san acacia is not working!!!!!!!!!!!!!!!
+
+range(temp$X_00060_00003)
+is.infinite(temp$X_00060_00003)
+
+# a log10 transformation did the trick! That tells me that it is lognormal. I will note in my report that a log10 transformation is a possible option if my models don't meet assumptions.
+# Also note the stair-steps in the data at lower values. This could result from detection limits where the low value was replaced with a standard value. It shouldn't be a huge problem, but it is worth noting as a thing to investigate if the analyses don't turn out well. 
+
 
 
 #### temporal autocorrelation####
@@ -179,7 +236,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04)) 
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04, 01)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 
@@ -195,6 +252,7 @@ forecast::Acf(temp_ts, na.action = na.interp)
 forecast::Pacf(temp_ts, na.action = na.pass)
 forecast::Pacf(temp_ts, na.action = na.contiguous)
 forecast::Pacf(temp_ts, na.action = na.interp)
+#PACF only describes the direct relationship between an observation and its lag
 
 #### San Acacia
 ### subset data to be one site and one parameter
@@ -214,7 +272,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04)) 
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2019, 04, 01)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 
@@ -335,7 +393,6 @@ temp_spatial  <- SpatialPointsDataFrame(coords= cbind(dat_monsoon$long_va, dat_m
                                         data = as.data.frame(cbind(dat_monsoon$site_no, dat_monsoon$X_00060_00003)),
                                         proj4string = proj)
 plot(temp_spatial)
-
 
 
 
