@@ -1,13 +1,15 @@
 #### READ ME####
-#The purpose of this script is to gather the data from both USGS gage system and explore it
+#The purpose of this script is to gather the data from both USGS gage system 
+#and the River Eyes dataset and explore both of them by.
 # - describing dataset size (# variables & # observations)
 # - describing data types
 # - checking data distributions
 # - checking for spatial autocorrelation
 # - checking for temporal autocorrelation
+# - checking for correlation between variables
 
 install.packages("tidyverse")
-#### libraries ####
+#### packages ####
 library(dataRetrieval) #USGS data pagacke
 library(tidyverse)
 library(lubridate)
@@ -46,8 +48,8 @@ vignette("dataRetrieval", package = "dataRetrieval")
 # retrieve data for one site
 otowi <- readNWISdata(siteNumbers = "08313000",
                       parameterCd = "00060",
-                      startDate = "2003-04-01",
-                      endDate = "2018-04-01",
+                      startDate = "2002-04-01",
+                      endDate = "2022-04-01",
                       service="dv")
 
 #retrieve data for all dates on all 8 gages
@@ -57,8 +59,8 @@ siteNumber <- c("08313000", "08313150", "08317400", "08319000", "08329918", "083
 #this code retrieves the discharge data
 pCode <- "00060"
 #start and end date from 2002 to 2022
-sdate <- "2003-04-01"
-edate <- "2018-10-31"
+sdate <- "2002-04-01"
+edate <- "2022-10-31"
 
 #get all the data from 2002 to 2022
 fulldischarge <- readNWISdv(siteNumbers = siteNumber,
@@ -94,7 +96,7 @@ ggplot(data=dis_otowi, aes(x=day, y=X_00060_00003))+
 # can also look at single years in detail
 ggplot(data=dis_otowi, aes(x=Date, y=X_00060_00003))+
   geom_point() + geom_path()+
-  xlim(c(as.Date("2018-04-01"), as.Date("2018-10-31")))+
+  xlim(c(as.Date("2019-04-01"), as.Date("2019-10-31")))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
@@ -118,14 +120,14 @@ ggplot(data=dis_sanacacia, aes(x=day, y=X_00060_00003))+
 # can also look at single years in detail
 ggplot(data=dis_sanacacia, aes(x=Date, y=X_00060_00003))+
   geom_point() + geom_path()+
-  xlim(c(as.Date("2018-04-01"), as.Date("2018-10-31")))+
+  xlim(c(as.Date("2019-04-01"), as.Date("2019-10-31")))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
 #### retrieving data USGS for the summer only####
 #use paste function and for loop to get all the dates from only the summer
 #start date
-start.date1 = c(20023:2018)
+start.date1 = c(2002:2022)
 start.date <- vector(mode="character", length=length(start.date1))
 for (i in 1:length(start.date1)){
   start.date[i] = paste(start.date1[i], "04","01", sep="-")
@@ -135,14 +137,14 @@ start.date = as.Date(start.date)
 #do I need it as a date?
 
 #end date
-end.date1 = c(2003:2018)
+end.date1 = c(2002:2022)
 end.date <- vector("character", length(end.date1))
 for (i in seq_along(end.date1)){
   end.date[i] = paste(end.date1[i], "10","31", sep="-")
 }
 end.date
 
-#get all the data from 2003 to 2018
+#get all the data from 2002 to 2022
 discharge <- readNWISdv(siteNumbers = siteNumber,
                         parameterCd = pCode,
                         startDate = start.date,
@@ -234,7 +236,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2003, 04, 01)) 
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2002, 04, 01)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 
@@ -270,7 +272,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2018, 04, 01)) 
+temp_ts = ts(temp_ts$X_00060_00003, frequency=365, start=c(2019, 04, 01)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 
