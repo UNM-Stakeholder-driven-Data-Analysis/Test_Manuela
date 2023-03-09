@@ -80,15 +80,16 @@ Annual_dry_rm <- Reyes %>%
   group_by(Year, RM) %>% 
   summarise(Sum_days_rm_dry = sum(Condition.b))
 
+# convert characters that should be numeric
+# and int that should be date (the year)
 Annual_dry_rm$Sum_days_rm_dry = as.numeric(Annual_dry_rm$Sum_days_rm_dry)
-Annual_dry_rm$Year = as.Date(Annual_dry_rm$Year, format="%yyyy")
+#Annual_dry_rm$Year = as.Date(Annual_dry_rm$Year, format="%y") DOES THIS WORK WITH JUST ONE YEAT?
 
 #merge the coordinates to my full data frame. I am doing this to perform 
 #the spatial autocorrelation but had to do it here before starting to mess with 
 #the data sets too much
 #use the merge function, the binding columns need to have the same name,
-#so we change the RM name column in the latlong data frame to match the RM name in 
-#the Reyes data frame
+#change the RM name column in the latlong data frame to match the RM name in the Reyes data frame
 latlong$RM<- latlong$RMNum 
 #we merge by RM to add latitude and longitude in the Reyes data set
 Reyes <- merge(Reyes, latlong[,c("RM", "Latitude")], by = "RM", all.x = TRUE)
@@ -123,19 +124,30 @@ ggplot(data=Annual_dry_rm, aes(x=RM, y=Sum_days_rm_dry))+
   theme_bw()
 
 #### check distributions ####
-
-temp = Annual_dry_rm[Annual_dry_rm$RM,]
-qqPlot(temp$Sum_days_rm_dry); shapiro.test(temp$Sum_days_rm_dry) 
+qqPlot(Annual_dry_rm$Sum_days_rm_dry); shapiro.test(Annual_dry_rm$Sum_days_rm_dry) 
 # not normal.W = 0.60482, p-value < 0.00000000000000022
-# For normal data, W should beclose to 1, above 0.9 and
-# p-value if it is really really low then you don't have normal data
+# For normal data, W should be close to 1, above 0.9 and
+# p-value if it is really really low (usually bellow 0.05)) then you don't have normal data
 # if it is high, then it is normal
 
-temp = Annual_dry_rm[Annual_dry_rm$RM,]
-summary(temp$Sum_days_rm_dry)
-hist(temp$Sum_days_rm_dry)
-plot(density(temp$Sum_days_rm_dry))
+##to cacluate spread out RM
+#numbericRM <- as.numeric(Annual_dry_rm$RM)
+#med=median(numbericRM) = 113
+#quantile(numbericRM) = 25%=83, 75=140
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']) #this one is not working
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']) #this one is not working
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='113']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='113']) #not normal at all
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='140']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='140']) #not normal at all
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='167']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='167']) #not normal at all
 
+### Examine non-normal data closely ###
+# ask:
+# are outliers making it non-normal?
+# can I justify removing outliers based on my knowledge of the data?
+# if data is still non-normal, what distribution is it?
+summary(Annual_dry_rm$Sum_days_rm_dry)
+hist(Annual_dry_rm$Sum_days_rm_dry)
+plot(density(Annual_dry_rm$Sum_days_rm_dry))
 # my data is not normal!
 # it is bounded above zero and is right-skewed
 
@@ -149,25 +161,44 @@ range(Annual_dry_rm$Sum_days_rm_dry)
 
 #### temporal autocorrelation ####
 
+dat_r = 
+  Annual_dry_rm %>% 
+  group_by(RM, Sum_days_rm_dry) %>% 
+  arrange(Year)
+
+dat_r <- dat_r %>%
+  mutate(date = as.Date(paste0(Year, "-04-01")))
+
+dat_yearly = 
+  dat_r %>%
+  mutate(yr = lubridate::year(date)) %>%
+  mutate(mo = lubridate::month(date)) %>%
+  dplyr::select(RM, yr, mo, Sum_days_rm_dry) %>%
+  group_by(RM, yr, mo) %>%
+  summarise(Value.mn = mean(Sum_days_rm_dry, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "1", sep="-")) %>%
+  mutate(date = as.Date(date))
+
 ### subset data to be one site and one parameter
-temp <- Reyes[Reyes$RM == "74" & (Reyes$dry_days == 0 | Reyes$dry_days > 0),]
+temp <- dat_yearly[dat_yearly$RM == "100",]
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
-temp = temp %>% arrange(Date_RE) 
+temp = temp %>% arrange(date) 
 ## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
 temp_ts =
   temp %>% 
-  complete(Date_RE = seq(min(Date_RE), max(Date_RE), by = "1 day"),
+  complete(date = seq(min(date), max(date), by = "year"),
            fill = list(value = NA)) %>%
-  as_tsibble(index = Date_RE)
- 
+  as_tsibble(index = date)
+
 ## finally, convert to a ts object
 # a ts object is a vector of data taken sequentially through time. Required arguments are:
 # - the data vector
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$dry_days, frequency=365, start=c(2003, 04, 01)) 
+ts = ts(temp_ts$Value.mn, frequency=1, start= c(year(temp_ts$date[1]), 1)) 
+#This should create a yearly time series object with the same start year and end year as temp_ts, and a frequency of 1 observation per year.
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 
@@ -176,7 +207,7 @@ print(temp_ts, calendar = T)
 #include 0 (which is always 1) and shows month #s by default instead of decimal years. 
 #Note the different options for dealing with NAs and how this changes the results 
 #(see ?na.fail and ?Acf for details). 
-dev.new()
+
 forecast::Acf(temp_ts, na.action = na.pass) 
 forecast::Acf(temp_ts, na.action = na.contiguous) 
 forecast::Acf(temp_ts, na.action = na.interp)
@@ -203,20 +234,34 @@ dat_reyes = Reyes[Reyes$Date_RE >= as.Date("2013-09-02") &
 #are there any missing values?
 sum(is.na(dat_reyes$dry_days)) #no
 
+dat_yearly$RM <- sub("^0+", "", dat_yearly$RM)
+dat_yearly <- merge(dat_yearly, latlong[,c("RM", "Latitude")], by = "RM", all.x = TRUE)
+dat_yearly <- merge(dat_yearly, latlong[,c("RM", "Longitude")], by = "RM", all.x = TRUE)
+### days for 2003
+days2003 = dat_yearly[dat_yearly$date >= as.Date("2003-04-01") &
+                        dat_yearly$date < as.Date("2003-10-31"),]
+
 # Moran.I River Eyes data 2003
 # generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(dat_reyes$Longitude, dat_reyes$Latitude)))
+dists = as.matrix(dist(cbind(days2003$Longitude, days2003$Latitude)))
 dists.inv = 1/dists
 diag(dists.inv) = 0
 # calculate Moran.I
-Moran.I(dat_reyes$dry_days, dists.inv)
+Moran.I(days2003$Value.mn, dists.inv)
 
 ## Mantel test winter
 # generate spatial distance matrix
-site_dists = dist(cbind(dat_reyes$Longitude, dat_reyes$Latitude))
+site_dists = dist(cbind(days2003$Longitude, days2003$Latitude))
 # generate response distance matrix 
-resp_dists = dist(dat_reyes$dry_days)
+resp_dists = dist(days2003$Value.mn)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 # if 'observation' is low (negative) there is no correlation between the distance matrices
 # if p value if high, it suggests that they are NOT correlated
+
+## Map
+proj = CRS("+proj=longlat +datum=WGS84")
+temp_spatial  <- SpatialPointsDataFrame(coords= cbind(days2003$Longitude, days2003$Latitude),
+                                        data = as.data.frame(cbind(days2003$RM, days2003$Value.mn)),
+                                        proj4string = proj)
+plot(temp_spatial)
