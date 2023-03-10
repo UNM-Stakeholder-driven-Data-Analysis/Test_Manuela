@@ -65,6 +65,13 @@ for (i in seq_along(end.date1)){
 end.date
 end.date = as.Date(end.date)
 
+#retrieve data for all dates on all 8 gages
+siteNumber <- c("08313000", "08313150", "08317400", "08319000", "08329918", "08329928", 
+                "08330000", "08330830", "08330875", "08331160", "08331510", "08332010", 
+                "08354900")
+#this code retrieves the discharge data
+pCode <- "00060"
+
 # Initialize an empty data frame to hold the results
 discharge <- data.frame()
 
@@ -82,7 +89,7 @@ for (i in seq_along(start.date)) {
 
 # View the resulting data frame
 discharge
-)
+
 
 #### check distributions####
 #Otowi

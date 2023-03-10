@@ -24,6 +24,7 @@ library(rgdal) # for mapping
 
 Reyes <- read.csv("Data/DailyOccurrenceDryRm.csv", header = TRUE)
 latlong <- read.csv("Data/WholeRiverMiles_LatLong.csv", header = TRUE)
+Annual_dry_rm <- read.csv("Data/Persistence.txt")
 
 # format date/time
 # as.POSIXct is for date + time + time zone
@@ -75,10 +76,10 @@ ggplot(data=Reyes, aes(x=RM, y= Year, fill = Condition))+
 
 #format data for year and sum all the days the river mile was dry throughout the year 
 #using occurrence data 
-Annual_dry_rm <- Reyes %>% 
-  mutate(Yr = lubridate::year(Date)) %>%
-  group_by(Year, RM) %>% 
-  summarise(Sum_days_rm_dry = sum(Condition.b))
+#Annual_dry_rm <- Reyes %>% 
+#  mutate(Yr = lubridate::year(Date)) %>%
+#  group_by(Year, RM) %>% 
+# summarise(Sum_days_rm_dry = sum(Condition.b))
 
 # convert characters that should be numeric
 # and int that should be date (the year)
@@ -99,12 +100,9 @@ Annual_dry_rm <- merge(Annual_dry_rm, latlong[,c("RM", "Latitude")], by = "RM", 
 Annual_dry_rm <- merge(Annual_dry_rm, latlong[,c("RM", "Longitude")], by = "RM", all.x = TRUE)
 
 # Add leading zero to numbers from 54 to 99
-Annual_dry_rm$RM <- ifelse(as.integer(as.character(Annual_dry_rm$RM)) < 100,
-                        paste0("0", as.character(Annual_dry_rm$RM)),
-                        as.character(Annual_dry_rm$RM))
-
-#Write csv 
-write.csv(Annual_dry_rm,"Data/PersistenceDryRM.csv", row.names = FALSE)
+#Annual_dry_rm$RM <- ifelse(as.integer(as.character(Annual_dry_rm$RM)) < 100,
+                       # paste0("0", as.character(Annual_dry_rm$RM)),
+                       # as.character(Annual_dry_rm$RM))
 
 # plot all RM by number of days dry 
 options(scipen = 999)
@@ -123,9 +121,11 @@ ggplot(data=Annual_dry_rm, aes(x=RM, y=Sum_days_rm_dry))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
+##it looks like RM 68 and RM 160 have odd values making them outliers. 
+
 #### check distributions ####
 qqPlot(Annual_dry_rm$Sum_days_rm_dry); shapiro.test(Annual_dry_rm$Sum_days_rm_dry) 
-# not normal.W = 0.60482, p-value < 0.00000000000000022
+# not normal.W = 0.49723, p-value < 0.00000000000000022
 # For normal data, W should be close to 1, above 0.9 and
 # p-value if it is really really low (usually bellow 0.05)) then you don't have normal data
 # if it is high, then it is normal
@@ -134,11 +134,18 @@ qqPlot(Annual_dry_rm$Sum_days_rm_dry); shapiro.test(Annual_dry_rm$Sum_days_rm_dr
 #numbericRM <- as.numeric(Annual_dry_rm$RM)
 #med=median(numbericRM) = 113
 #quantile(numbericRM) = 25%=83, 75=140
-qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']) #this one is not working
-qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']) #this one is not working
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']) #not normal
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='70']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='70']) #not normal
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='75']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='75']) #normal
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']) #normal
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='95']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='95']) #normalish
 qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='113']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='113']) #not normal at all
 qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='140']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='140']) #not normal at all
 qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='167']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='167']) #not normal at all
+
+qqPlot(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='86']); shapiro.test(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='86'])
+
+#distributions around RM83 are more normal than the rest!!!!
 
 ### Examine non-normal data closely ###
 # ask:
@@ -150,6 +157,15 @@ hist(Annual_dry_rm$Sum_days_rm_dry)
 plot(density(Annual_dry_rm$Sum_days_rm_dry))
 # my data is not normal!
 # it is bounded above zero and is right-skewed
+#If we look at them individually by river miels
+#RM 54
+summary(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54'])
+hist(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54'])
+plot(density(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='54']))
+#RM 83
+summary(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83'])
+hist(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83'])
+plot(density(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']))
 
 ### Examine non-normal data closely ###
 # ask:
@@ -158,9 +174,9 @@ plot(density(Annual_dry_rm$Sum_days_rm_dry))
 # if data is still non-normal, what distribution is it?
 
 range(Annual_dry_rm$Sum_days_rm_dry)
-
+range(Annual_dry_rm$RM=)
 #### temporal autocorrelation ####
-
+# I'm going to check these one site at a time. This is making the ts object for the analysis
 dat_r = 
   Annual_dry_rm %>% 
   group_by(RM, Sum_days_rm_dry) %>% 
@@ -168,7 +184,8 @@ dat_r =
 
 dat_r <- dat_r %>%
   mutate(date = as.Date(paste0(Year, "-04-01")))
-
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, yearly,
 dat_yearly = 
   dat_r %>%
   mutate(yr = lubridate::year(date)) %>%
@@ -179,8 +196,9 @@ dat_yearly =
   mutate(date = paste(yr, mo, "1", sep="-")) %>%
   mutate(date = as.Date(date))
 
+
 ### subset data to be one site and one parameter
-temp <- dat_yearly[dat_yearly$RM == "100",]
+temp <- dat_yearly[dat_yearly$RM == 83 ,]
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
@@ -197,7 +215,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occurred. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-ts = ts(temp_ts$Value.mn, frequency=1, start= c(year(temp_ts$date[1]), 1)) 
+temp_ts = ts(temp_ts$Value.mn, frequency=1, start= c(year(temp_ts$date[1]), 1)) 
 #This should create a yearly time series object with the same start year and end year as temp_ts, and a frequency of 1 observation per year.
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
@@ -224,36 +242,34 @@ length(unique(Reyes$RM))
 
 # calculate cumulative number of days dry per site.
 #for example: if you are looking at site 74 and it was dry on Monday, that would be 1. Dry again on Tuesday that is 2. Dry again on Wednesday = 3. But then wet on Thursday the value resets to 0. 
-Reyes <- Reyes %>% 
-  group_by(RM) %>% 
-  mutate(dry_days = ifelse(Condition == "Dry", cumsum(Condition == "Dry"), 0))
+#Reyes <- Reyes %>% 
+#  group_by(RM) %>% 
+#  mutate(dry_days = ifelse(Condition == "Dry", cumsum(Condition == "Dry"), 0))
 
-dat_reyes = Reyes[Reyes$Date_RE >= as.Date("2013-09-02") &
-                    Reyes$Date_RE < as.Date("2013-09-03"),]
+#dat_reyes = Reyes[Reyes$Date_RE >= as.Date("2013-09-02") &
+#                    Reyes$Date_RE < as.Date("2013-09-03"),]
 
-#are there any missing values?
-sum(is.na(dat_reyes$dry_days)) #no
 
 dat_yearly$RM <- sub("^0+", "", dat_yearly$RM)
 dat_yearly <- merge(dat_yearly, latlong[,c("RM", "Latitude")], by = "RM", all.x = TRUE)
 dat_yearly <- merge(dat_yearly, latlong[,c("RM", "Longitude")], by = "RM", all.x = TRUE)
-### days for 2003
-days2003 = dat_yearly[dat_yearly$date >= as.Date("2003-04-01") &
-                        dat_yearly$date < as.Date("2003-10-31"),]
+### days for 200x
+days2018 = dat_yearly[dat_yearly$date >= as.Date("2018-04-01") &
+                        dat_yearly$date < as.Date("2018-10-31"),]
 
-# Moran.I River Eyes data 2003
+# Moran.I River Eyes data 
 # generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(days2003$Longitude, days2003$Latitude)))
+dists = as.matrix(dist(cbind(days2006$Longitude, days2006$Latitude)))
 dists.inv = 1/dists
 diag(dists.inv) = 0
 # calculate Moran.I
-Moran.I(days2003$Value.mn, dists.inv)
+Moran.I(days2006$Value.mn, dists.inv)
 
 ## Mantel test winter
 # generate spatial distance matrix
-site_dists = dist(cbind(days2003$Longitude, days2003$Latitude))
+site_dists = dist(cbind(days2018$Longitude, days2018$Latitude))
 # generate response distance matrix 
-resp_dists = dist(days2003$Value.mn)
+resp_dists = dist(days2018$Value.mn)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 # if 'observation' is low (negative) there is no correlation between the distance matrices
