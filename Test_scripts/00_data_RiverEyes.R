@@ -23,7 +23,7 @@ library(rgdal) # for mapping
 #### load and tidy River Eyes data  ####
 
 Reyes <- read.csv("Data/DailyOccurrenceDryRm.csv", header = TRUE)
-latlong <- read.csv("Data/WholeRiverMiles_LatLong.csv", header = TRUE)
+latlong_o <- read.csv("Data/WholeRiverMiles_LatLong.csv", header = TRUE)
 Annual_dry_rm <- read.csv("Data/Persistence.txt")
 
 # format date/time
@@ -88,7 +88,18 @@ Annual_dry_rm$Sum_days_rm_dry = as.numeric(Annual_dry_rm$Sum_days_rm_dry)
 
 #merge the coordinates to my full data frame. I am doing this to perform 
 #the spatial autocorrelation but had to do it here before starting to mess with 
-#the data sets too much
+#the data sets too much.
+#First I ned to get rid of the dublicate river miles in the latlong data frame
+# Remove rows with index 177, 156, 126, 111, 109, 78
+latlong <- latlong_o[-c(177, 156, 126, 111, 109, 78), ]
+
+#177 fid 176 rm 68
+#156 fid 155 rm 87
+#111 fid 110 rm 130
+#126 fid 125 rm 116
+#109 fid 108 rm 150
+#78 fid 77 rm 161
+
 #use the merge function, the binding columns need to have the same name,
 #change the RM name column in the latlong data frame to match the RM name in the Reyes data frame
 latlong$RM<- latlong$RMNum 
@@ -174,7 +185,7 @@ plot(density(Annual_dry_rm$Sum_days_rm_dry[Annual_dry_rm$RM=='83']))
 # if data is still non-normal, what distribution is it?
 
 range(Annual_dry_rm$Sum_days_rm_dry)
-range(Annual_dry_rm$RM=)
+range(Annual_dry_rm$RM)
 #### temporal autocorrelation ####
 # I'm going to check these one site at a time. This is making the ts object for the analysis
 dat_r = 

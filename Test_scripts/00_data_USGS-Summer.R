@@ -1,6 +1,7 @@
 #### READ ME####
-#The purpose of this script is to gather the data from both USGS gage system 
-# FOR THE SUMMER ONLY - APRIL 1st TO OCTOBER 31st FOR EVERY YEAR and explore it
+#The purpose of this script is to gather the data from the USGS gage system 
+# FOR THE SUMMER ONLY - APRIL 1st TO OCTOBER 31st FOR EVERY YEAR from 2003 - 2018 
+# and explore it
 # - describing dataset size (# variables & # observations)
 # - describing data types
 # - checking data distributions
@@ -90,6 +91,7 @@ for (i in seq_along(start.date)) {
 # View the resulting data frame
 discharge
 
+#this gets the daily mean discharge
 
 #### check distributions####
 #Otowi
@@ -161,14 +163,10 @@ qqPlot(log10(temp$X_00060_00003[0:5000])); shapiro.test(log10(temp$X_00060_00003
 temp = discharge[discharge$site_no == "08330875",]
 qqPlot(log10(temp$X_00060_00003[0:5000])); shapiro.test(log10(temp$X_00060_00003[0:5000]))
 
-range(temp$X_00060_00003)
-is.infinite(temp$X_00060_00003)
+#range(temp$X_00060_00003)
+#is.infinite(temp$X_00060_00003)
 
-# a log10 transformation did the trick! That tells me that it is lognormal. I will note in my report that a log10 transformation is a possible option if my models don't meet assumptions.
-# Also note the stair-steps in the data at lower values. This could result from detection limits where the low value was replaced with a standard value. It shouldn't be a huge problem, but it is worth noting as a thing to investigate if the analyses don't turn out well. 
-#for now, it doesn't matter if I can't "name the distribution of my data". It will
-# be important down the road when I'm dealing with the residuals in my model, but 
-# for now it's ok.
+# a log10 transformation did not quite fit the data.
 
 #### temporal autocorrelation####
 #### Otowi
@@ -254,85 +252,85 @@ siteInfo <- readNWISsite(c("08313000", "08313150", "08317400", "08319000", "0832
 discharge <- merge(discharge, siteInfo[,c("site_no", "lat_va")], by = "site_no", all.x = TRUE)
 discharge <- merge(discharge, siteInfo[,c("site_no", "long_va")], by = "site_no", all.x = TRUE)
 
-### winter day 2019
-dat_winter = discharge[discharge$Date >= as.Date("2018-02-01") &
-                             discharge$Date < as.Date("2018-02-02"),]
-temp = dat_winter %>%  filter(X_00060_00003 %in% dat_winter)
-
-## Moran.I winter 2019
-# generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(dat_winter$long_va, dat_winter$lat_va)))
-dists.inv = 1/dists
-diag(dists.inv) = 0
-# calculate Moran.I
-Moran.I(dat_winter$X_00060_00003, dists.inv)
-
-#### spring day 2019
-dat_spring = discharge[discharge$Date >= as.Date("2018-04-01") &
+### April 2010
+dat_april = discharge[discharge$Date >= as.Date("2010-04-01") &
                              discharge$Date < as.Date("2018-04-02"),]
+temp = dat_april %>%  filter(X_00060_00003 %in% dat_april)
 
-## Moran.I spring 
+## Moran.I April
 # generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(dat_spring$long_va, dat_spring$lat_va)))
+dists = as.matrix(dist(cbind(dat_april$long_va, dat_april$lat_va)))
 dists.inv = 1/dists
 diag(dists.inv) = 0
 # calculate Moran.I
-Moran.I(dat_spring$X_00060_00003, dists.inv)
+Moran.I(dat_april$X_00060_00003, dists.inv)
 
-#### fall day 2019
-dat_fall = discharge[discharge$Date >= as.Date("2019-10-01") &
-                           discharge$Date < as.Date("2019-10-02"),]
+#### June 2010
+dat_june= discharge[discharge$Date >= as.Date("2010-06-01") &
+                             discharge$Date < as.Date("2010-06-02"),]
 
-## Moran.I fall
+## Moran.I June 
 # generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(dat_fall$long_va, dat_fall$lat_va)))
+dists = as.matrix(dist(cbind(dat_june$long_va, dat_june$lat_va)))
 dists.inv = 1/dists
 diag(dists.inv) = 0
 # calculate Moran.I
-Moran.I(dat_fall$X_00060_00003, dists.inv)
+Moran.I(dat_june$X_00060_00003, dists.inv)
 
-#### Monsoon day 2019
-dat_monsoon = discharge[discharge$Date >= as.Date("2019-06-01") &
-                              discharge$Date < as.Date("2019-06-02"),]
+#### August 2010
+dat_august = discharge[discharge$Date >= as.Date("2010-08-01") &
+                           discharge$Date < as.Date("2010-08-02"),]
 
-## Moran.I Monsoon
+## Moran.I August
 # generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(dat_monsoon$long_va, dat_monsoon$lat_va)))
+dists = as.matrix(dist(cbind(dat_august$long_va, dat_august$lat_va)))
 dists.inv = 1/dists
 diag(dists.inv) = 0
 # calculate Moran.I
-Moran.I(dat_monsoon$X_00060_00003, dists.inv)
+Moran.I(dat_august$X_00060_00003, dists.inv)
 
-## Mantel test winter
+#### October 2010
+dat_october = discharge[discharge$Date >= as.Date("2010-10-01") &
+                              discharge$Date < as.Date("2010-10-02"),]
+
+## Moran.I October
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(dat_october$long_va, dat_october$lat_va)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(dat_october$X_00060_00003, dists.inv)
+
+## Mantel test April
 # generate spatial distance matrix
-site_dists = dist(cbind(dat_winter$long_va, dat_winter$lat_va))
+site_dists = dist(cbind(dat_april$long_va, dat_april$lat_va))
 # generate response distance matrix 
-resp_dists = dist(dat_winter$X_00060_00003)
+resp_dists = dist(dat_april$X_00060_00003)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 
 
-## Mantel test spring
+## Mantel test June
 # generate spatial distance matrix
-site_dists = dist(cbind(dat_spring$long_va, dat_spring$lat_va))
+site_dists = dist(cbind(dat_june$long_va, dat_june$lat_va))
 # generate response distance matrix 
-resp_dists = dist(dat_spring$X_00060_00003)
+resp_dists = dist(dat_june$X_00060_00003)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 
-## Mantel test fall
+## Mantel test August
 # generate spatial distance matrix
-site_dists = dist(cbind(dat_fall$long_va, dat_fall$lat_va))
+site_dists = dist(cbind(dat_august$long_va, dat_august$lat_va))
 # generate response distance matrix 
-resp_dists = dist(dat_fall$X_00060_00003)
+resp_dists = dist(dat_august$X_00060_00003)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 
-## Mantel test Monsoon
+## Mantel test October
 # generate spatial distance matrix
-site_dists = dist(cbind(dat_monsoon$long_va, dat_monsoon$lat_va))
+site_dists = dist(cbind(dat_october$long_va, dat_october$lat_va))
 # generate response distance matrix 
-resp_dists = dist(dat_monsoon$X_00060_00003)
+resp_dists = dist(dat_october$X_00060_00003)
 # run Mantel test
 mantel.rtest(site_dists, resp_dists, nrepet = 9999)
 # if 'observation' is low (negative) there is no correlation between the distance matrices
