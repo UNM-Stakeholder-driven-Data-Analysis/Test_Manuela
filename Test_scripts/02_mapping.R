@@ -13,7 +13,7 @@ library(devtools)
 #devtools::install_github("dkahle/ggmap", ref = "tidyup")
 
 # this is my key
-register_google(key = "AIzaSyACAtHvk5OIB8hqMZVozXxx1yQIBxVbFqU") 
+register_google(key = "IzaSyACAtHvk5OIB8hqMZVozXxx1yQIBxVbFqU") 
 ####this is just from the tutorial - don't run####
 # just a test that everything is working
 santa_fe <- geocode("Santa Fe, New Mexico") 
