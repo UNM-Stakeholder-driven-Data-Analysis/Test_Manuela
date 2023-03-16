@@ -124,37 +124,6 @@ ggplot(data=dis_sanacacia, aes(x=Date, y=X_00060_00003))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
-#### retrieving data USGS for the summer only####
-#use paste function and for loop to get all the dates from only the summer
-#start date
-start.date1 = c(2002:2022)
-start.date <- vector(mode="character", length=length(start.date1))
-for (i in 1:length(start.date1)){
-  start.date[i] = paste(start.date1[i], "04","01", sep="-")
-}
-start.date
-start.date = as.Date(start.date)
-#do I need it as a date?
-
-#end date
-end.date1 = c(2002:2022)
-end.date <- vector("character", length(end.date1))
-for (i in seq_along(end.date1)){
-  end.date[i] = paste(end.date1[i], "10","31", sep="-")
-}
-end.date
-
-#get all the data from 2002 to 2022
-discharge <- readNWISdv(siteNumbers = siteNumber,
-                        parameterCd = pCode,
-                        startDate = start.date,
-                        endDate = end.date
-)
-
-# data from Rio Grande? fix
-#data_nm <- readNWISdata(huc="13020211", parameterCd="00060", service="uv")
-
-
 #### check distributions####
 #Otowi
 temp = fulldischarge[fulldischarge$site_no == "08313000",]
