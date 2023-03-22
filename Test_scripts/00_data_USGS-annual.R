@@ -109,72 +109,21 @@ ggplot(data=discharge_sum, aes(x=year, y=discharge_sum, color=site_no))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
-####Linear models####
+####trouble shooting missing values####
+# retrieve data for White Rock and Bernardo
+#White Rock's data starts in 2016
+whiterock <- readNWISdata(siteNumbers = "08313150",
+                      parameterCd = "00060",
+                      startDate = "2002-04-01",
+                      endDate = "2018-10-31",
+                      service="dv")
+#Bernardo's data stops in 2005 and starts in 2011
+bernardo <- readNWISdata(siteNumbers = "08332010",
+                          parameterCd = "00060",
+                          startDate = "2002-04-01",
+                          endDate = "2018-10-31",
+                          service="dv")
 
-# Filter data for a specific site
-site_no <- "08313000" #Otowi gauge
-RM <- "248" #RM for Otowi 257???
-site_year_data <- discharge_sum %>%
-  filter(site_no == site_no, RM == RM)
-
-# create the linear model
-m1 <- lm(Sum_days_rm_dry ~ discharge_sum, data = site_year_data)
-summary(m1)
-# check assumptions
-plot(m1)
-
-# Filter data for a specific site and year
-site_no <- "08313150"
-RM <- "254"
-site_year_data <- discharge_sum %>%
-  filter(site_no == site_no, RM == RM)
-
-# create the linear model
-m1 <- lm(Sum_days_rm_dry ~ discharge_sum, data = site_year_data)
-summary(m1)
-# check assumptions
-plot(m1)
-
-####GLM####
-# Filter data for a specific site and year
-site_no <- "08313150"
-RM <- "254"
-site_year_data <- merged_data %>%
-  filter(site_no == site_no, RM == RM)
-# build model
-glm_full <- glm(Sum_days_rm_dry ~ discharge_sum, 
-                family = "poisson", 
-                data = site_year_data)
-
-#satisfies the assumptions
-simulateResiduals(glm_full, plot = T)
-
-#run anova
-car::Anova(glm_full, type = "III")
-
-# Filter data for a specific site and year
-site_no <- "08313150"
-RM <- "254"
-site_year_data <- merged_data %>%
-  filter(site_no == site_no, RM == RM)
-  
-tmod_lme4_L <- glmer(Sum_days_rm_dry ~ factor(discharge_sum)  + (1|site_no/year),
-                     family="poisson",data= site_year_data)
-
-
-tmod_lme4_bad <- lmer(TICKS ~ factor(YEAR) + cHEIGHT  + (1|Site/BROOD),
-                      data= tickdata)
-
-qqnorm(resid(tmod_lme4_L))
-qqline(resid(tmod_lme4_L))
-
-simulateResiduals(tmod_lme4_L, plot = T)
-
-plot(resid(tmod_lme4_L))
-
-MuMIn::AICc(tmod_lme4_L, tmod_lme4_bad)
-
-car::Anova(tmod_lme4_L, type = "III")
 
 
 
