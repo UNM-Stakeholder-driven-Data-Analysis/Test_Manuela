@@ -80,6 +80,12 @@ for (i in seq_along(start.date)) {
 # View the resulting data frame
 discharge
 
+#### load and tidy River Eyes data  ####
+
+Reyes <- read.csv("Data/DailyOccurrenceDryRm.csv", header = TRUE)
+latlong_o <- read.csv("Data/WholeRiverMiles_LatLong.csv", header = TRUE)
+Annual_dry_rm <- read.csv("Data/Persistence.txt")
+
 
 ####summing discharge data by year####
 # add year column from date 
