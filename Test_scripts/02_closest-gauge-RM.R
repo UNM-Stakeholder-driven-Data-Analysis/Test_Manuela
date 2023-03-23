@@ -46,7 +46,7 @@ site <- c("08313000", "08313150", "08317400", "08319000", "08329918", "08329928"
 for (site in site){
   gauge <- siteInfo %>%
     filter(site_no == site)
-  #createe a new column for each gauge
+  #create a new column for each gauge
   coords2.2[site] <- ""
 
   # loop through each river mile
