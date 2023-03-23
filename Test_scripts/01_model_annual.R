@@ -157,31 +157,28 @@ summary(m1)
 plot(m1)
 
 ####GLM####
-# Filter data for a specific site and year
-site_no <- "08313150"
-RM <- "254"
-site_year_data <- merged_data %>%
-  filter(site_no == site_no, RM == RM)
-# build model
-glm_full <- glm(Sum_days_rm_dry ~ discharge_sum, 
-                family = "poisson", 
-                data = site_year_data)
-
-#satisfies the assumptions
-simulateResiduals(glm_full, plot = T)
-
-#run anova
-car::Anova(glm_full, type = "III")
-
-# Filter data for a specific site and year
-site <- "08313000"
-rivermile <- "54"
+# Filter data for a site with 12 zeros out of 14 values and 
+site <- "08313000" #otowi
+rivermile <- "167"
 
 site_year_data <- merged_data %>%
   filter(site_no == site & RM == rivermile)
+#run poisson model for that site
+mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
+                   family = poisson(link = "log"), data= site_year_data)
 
-tmod_lme4_L <- glmer(Sum_days_rm_dry ~ discharge_sum  + (1|year),
-                     family = poisson(link = "log"), data= site_year_data)
+summary(mod_poiss)
+plot(mod_poiss)
 
+# Filter data for a site with 1 zero out of 14 values and 
+site <- "08313000" #otowi
+rivermile <- "75"
 
+site_year_data <- merged_data %>%
+  filter(site_no == site & RM == rivermile)
+#run poisson model for that site
+mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
+                   family = poisson(link = "log"), data= site_year_data)
 
+summary(mod_poiss)
+plot(mod_poiss)
