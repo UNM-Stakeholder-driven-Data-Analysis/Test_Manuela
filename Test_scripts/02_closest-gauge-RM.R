@@ -2,6 +2,7 @@
 #The purpose of this script is to calculate the closest river mile of each gauge
 
 ####libraries####
+library(dataRetrieval) #USGS data pagacke
 library(geosphere)
 library(dplyr)
 ####Loading data and fixing data####
@@ -36,7 +37,7 @@ coords1 <- merge(coords1, siteInfo[,c("site_no", "latitude")], by = "latitude", 
 
 
 ####remove RM that are not included in study
-coords2.2 = coords2[-c(193:300, 1:71, 27, 109, 127, 177, 176), ] 
+upstream = coords2[-c(193:300, 1:71, 27, 109, 127, 177, 176), ] 
 
 #calculate if RM is downstream of each gauge
 #get each gauge site
@@ -47,20 +48,22 @@ for (site in site){
   gauge <- siteInfo %>%
     filter(site_no == site)
   #create a new column for each gauge
-  coords2.2[site] <- ""
+  upstream[site] <- ""
 
   # loop through each river mile
   for (i in 1:nrow(coords2.2)) {
   north <- FALSE
   # check if the latitude of coords2.2 point is greater than gauge latitude
-  if (coords2.2[i, "latitude"] > gauge$dec_lat_va) {
+  if (upstream[i, "latitude"] > gauge$dec_lat_va) {
     north <- TRUE
   }
   # set "northness" for current site and river mile
   if (north) {
-    coords2.2[i, site] <- "north"
+    upstream[i, site] <- "north"
   } else {
-    coords2.2[i, site] <- "south"
+    upstream[i, site] <- "south"
   }
   }
 }
+#write csv into Data folder as upstream.csv
+write.csv(upstream,  "Data/upstream.csv", row.names = FALSE)

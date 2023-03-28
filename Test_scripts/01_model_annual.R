@@ -18,18 +18,18 @@ library(lme4)
 # gages of interest (add a cero at the begining of each one!)
 
 # 8313000	RIO GRANDE AT OTOWI BRIDGE, NM
-# 8313150	Rio Grande abv Buckman Diversion, nr White Rock,NM
+# 8313150	Rio Grande abv Buckman Diversion, nr White Rock,NM ##deleted for lack of data
 # 8317400	RIO GRANDE BELOW COCHITI DAM, NM
 # 8319000	RIO GRANDE AT SAN FELIPE, NM
 # 8329918	RIO GRANDE AT ALAMEDA BRIDGE AT ALAMEDA, NM
 # 8329928	RIO GRANDE NR ALAMEDA, NM
 # 8330000	RIO GRANDE AT ALBUQUERQUE, NM
-# 8330830	RIO GRANDE AT VALLE DE ORO, NM
+# 8330830	RIO GRANDE AT VALLE DE ORO, NM ##deleted for lack of data
 # 8330875	RIO GRANDE AT ISLETA LAKES NR ISLETA, NM
-# 8331160	RIO GRANDE NEAR BOSQUE FARMS, NM
-# 8331510	RIO GRANDE AT STATE HWY 346 NEAR BOSQUE, NM
-# 8332010	RIO GRANDE FLOODWAY NEAR BERNARDO, NM
-# 8354900	RIO GRANDE FLOODWAY AT SAN ACACIA, NM
+# 08331160	RIO GRANDE NEAR BOSQUE FARMS, NM
+# 08331510	RIO GRANDE AT STATE HWY 346 NEAR BOSQUE, NM
+# 08332010	RIO GRANDE FLOODWAY NEAR BERNARDO, NM
+# 08354900	RIO GRANDE FLOODWAY AT SAN ACACIA, NM
 
 ####retrieving data USGS for the summer only####
 
@@ -56,8 +56,8 @@ end.date
 end.date = as.Date(end.date)
 
 #retrieve data for all dates on all 8 gages
-siteNumber <- c("08313000", "08313150", "08317400", "08319000", "08329918", "08329928", 
-                "08330000", "08330830", "08330875", "08331160", "08331510", "08332010", 
+siteNumber <- c("08313000", "08317400", "08319000", "08329918", "08329928", 
+                "08330000", "08330830", "08330875", "08331160", "08331510", 
                 "08354900")
 #this code retrieves the discharge data
 pCode <- "00060"
@@ -133,10 +133,10 @@ bernardo <- readNWISdata(siteNumbers = "08332010",
 ####Linear models####
 
 # Filter data for a specific site
-site_no <- "08313000" #Otowi gauge
-RM <- "248" #RM for Otowi 257???
+site <- "08313000" #Otowi gauge
+RivMile <- "248" #RM for Otowi 257???
 site_year_data <- discharge_sum %>%
-  filter(site_no == site_no, RM == RM)
+  filter(site_no == site, RM == RivMile)
 
 # create the linear model
 m1 <- lm(Sum_days_rm_dry ~ discharge_sum, data = site_year_data)
@@ -146,7 +146,7 @@ plot(m1)
 
 # Filter data for a specific site and year
 site_no <- "08313150"
-RM <- "254"
+RM <- "54"
 site_year_data <- discharge_sum %>%
   filter(site_no == site_no, RM == RM)
 
@@ -170,6 +170,7 @@ mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
 summary(mod_poiss)
 plot(mod_poiss)
 
+
 # Filter data for a site with 1 zero out of 14 values and 
 site <- "08313000" #otowi
 rivermile <- "75"
@@ -182,3 +183,84 @@ mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
 
 summary(mod_poiss)
 plot(mod_poiss)
+
+# Filter data for a site with 12 zeros out of 14 values and 
+site <- "08330875" #isleta
+rivermile <- "167"
+
+site_year_data <- merged_data %>%
+  filter(site_no == site & RM == rivermile)
+#run poisson model for that site
+mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
+                 family = poisson(link = "log"), data= site_year_data)
+
+summary(mod_poiss)
+plot(mod_poiss)
+
+# Filter data for a site with 1 zero out of 14 values and 
+site <- "08330875" #isleta
+rivermile <- "75"
+
+site_year_data <- merged_data %>%
+  filter(site_no == site & RM == rivermile)
+#run poisson model for that site
+mod_poiss <- glm(Sum_days_rm_dry ~ discharge_sum,
+                 family = poisson(link = "log"), data= site_year_data)
+
+summary(mod_poiss)
+plot(mod_poiss)
+
+
+#retrieve gauges that are upstream of specific river miles
+upstream = read.csv("Data/upstream.csv")
+
+#change RMNum to RM
+upstream$RM<- upstream$RMNum
+#merge upstream and data data set
+d <- merge(merged_data, upstream, by = "RM")
+
+#### create list of data frames ####
+# extract unique values of variables "site_no" and "RM"
+site_noz <- unique(d$site_no) 
+RMz <- unique(d$RM)
+# create a data frame called "dfz" using the "expand.grid" function which generates a sequence of all combinations of the variables.
+dfz = expand.grid(site_noz, RMz)
+names(dfz) = c("site_no", "RM")
+# add a new column called "df_ID" to "dfz" which is a combination of "site_no" and "RM" variables separated by an underscore.
+dfz$df_ID = paste(dfz$site_no, dfz$RM, sep="_")
+# an empty list called "alldfz" is created, which will be used to store individual data frames.
+alldfz = list()
+#loop over each unique value in "df_ID" column of "dfz" and filters "merged_data" for the corresponding values of "site_no" and "RM" to create individual data frames.
+#Finally, these data frames are stored as elements of the "alldfz" list with their corresponding names.
+for(i in dfz$df_ID){
+  RMi = dfz$RM[dfz$df_ID==i]
+  site_noi = dfz$site_no[dfz$df_ID==i]
+  alldfz[[i]] = d %>%
+    filter(site_no == site_noi, RM == RMi)
+} 
+
+#remove river miles with less than 3 points of data (non-zero)
+# Find rows with less than 3 non-zero values
+# apply counts the num of non-zero values for each row. The logical expression df != 0 creates a new df of the same dimensions as your df with TRUE values where the values in df are non-zero, and FALSE values where the values in df are zero. The sum function is then applied row-wise to this logical data frame to count the number of non-zero values for each row.
+remove_rows <- function(alldfz) {
+  to_remove <- apply(alldfz != 0, 1, sum) < 3
+  alldfz[!to_remove,]
+}
+
+# Apply the function to each data frame in the list
+alldfz_cleaned <- lapply(alldfz, remove_rows)
+
+
+
+fit_glm <- function(df) {
+  glm(Sum_days_rm_dry ~ discharge_sum, 
+      family = poisson(link = "log"), data = df)
+}
+ 
+summary(mod_poiss)
+plot(mod_poiss)
+
+
+
+
+
