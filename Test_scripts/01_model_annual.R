@@ -214,10 +214,13 @@ plot(mod_poiss)
 #retrieve gauges that are upstream of specific river miles
 upstream = read.csv("Data/upstream.csv")
 
+# Remove duplicates by single column
+upstream2 <- upstream[!duplicated(upstream$RMNum), ]
+
 #change RMNum to RM
-upstream$RM<- upstream$RMNum
+upstream2$RM<- upstream2$RMNum
 #merge upstream and data data set
-d <- merge(merged_data, upstream, by = "RM")
+d <- merge(merged_data, upstream2, by = "RM")
 
 #### create list of data frames ####
 # extract unique values of variables "site_no" and "RM"
@@ -240,25 +243,67 @@ for(i in dfz$df_ID){
 } 
 
 #remove river miles with less than 3 points of data (non-zero)
-# Find rows with less than 3 non-zero values
-# apply counts the num of non-zero values for each row. The logical expression df != 0 creates a new df of the same dimensions as your df with TRUE values where the values in df are non-zero, and FALSE values where the values in df are zero. The sum function is then applied row-wise to this logical data frame to count the number of non-zero values for each row.
-remove_rows <- function(alldfz) {
-  to_remove <- apply(alldfz != 0, 1, sum) < 3
-  alldfz[!to_remove,]
+# define  column to check
+col <- "Sum_days_rm_dry"
+# subset the list to remove data frames with less than 3 non-zero values
+alldfz_cleaned <- lapply(alldfz, function(df) { #create the function
+  sum_nonzero <- sum(!is.na(df[, col]) & df[, col]!= 0) #sum the number of zeros in the column and catch any na's
+  if (sum_nonzero >= 3) { #if there are 2 or less zeros, apply function
+    return(df)
+  }
+})
+#to remove any NULL elements that may have been created by the lapply 
+alldfz_cleaned <- alldfz_cleaned[!sapply(alldfz_cleaned, is.null)]
+
+##verify that it worked
+# create a list to store the counts
+zero_counts <- list()
+# iterate over each data frame in the list
+for (i in seq_along(alldfz_cleaned)) {
+  # create a vector to store the counts for this data frame
+  alldfz_counts <- numeric(ncol(alldfz_cleaned[[i]]))
+  
+  # iterate over each column in the data frame
+  for (j in seq_along(alldfz_cleaned[[i]])) {
+    # count the number of zeros in the column
+    alldfz_counts[j] <- sum(alldfz_cleaned[[i]][, j] == 0, na.rm = TRUE)
+  }
+  
+  # add the counts for this data frame to the list
+  zero_counts[[i]] <- alldfz_counts
 }
 
-# Apply the function to each data frame in the list
-alldfz_cleaned <- lapply(alldfz, remove_rows)
+# print the list of zero counts
+print(zero_counts)
 
+#remove river upstream of gauges
+# vector of column names I would like to extract
+cols = c("X08313000", "X08317400", "X08319000", "X08329918", "X08329928", 
+          "X08330000","X08330830", "X08330875", "X08331160", "X08331510", 
+          "X08354900")
+# subset the list to remove data frames of RM upstream of gauges
+alldfz_downs <- lapply(alldfz_cleaned, function(df) { #create the function
+  norths <- df[, cols][grep("north", df[, cols])]
+  if (nrow(norths) > 0){
+    return(NULL)  # return NULL instead of the original data frame
+  } else {
+    return(df)
+  }
+})
 
+#to remove any NULL elements that may have been created by the lapply 
+alldfz_downs <- alldfz_downs[!sapply(alldfz_downs, is.null)]
 
-fit_glm <- function(df) {
-  glm(Sum_days_rm_dry ~ discharge_sum, 
+rm ="Sum_days_rm_dry"
+g = "discharge_sum"
+
+fit_glm <- lapply(alldfz_cleaned, function(df) {
+  glm_poi <- glm(Sum_days_rm_dry ~ discharge_sum, 
       family = poisson(link = "log"), data = df)
-}
+})
  
-summary(mod_poiss)
-plot(mod_poiss)
+summary(fit_glm)
+plot(fit_glm)
 
 
 
