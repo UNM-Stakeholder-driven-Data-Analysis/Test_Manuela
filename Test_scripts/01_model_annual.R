@@ -9,6 +9,7 @@ library(tidyverse)
 library(lubridate)
 library(DHARMa) #testing glm assumptions
 library(lme4)
+library(dplyr)
 
 
 ####data info ####
@@ -80,7 +81,7 @@ for (i in seq_along(start.date)) {
 # View the resulting data frame
 discharge
 
-#### load and tidy River Eyes data  ####
+####load and tidy River Eyes data  ####
 
 Reyes <- read.csv("Data/DailyOccurrenceDryRm.csv", header = TRUE)
 latlong_o <- read.csv("Data/WholeRiverMiles_LatLong.csv", header = TRUE)
@@ -130,7 +131,7 @@ bernardo <- readNWISdata(siteNumbers = "08332010",
                           endDate = "2018-10-31",
                           service="dv")
 
-####Linear models####
+####linear models####
 
 # Filter data for a specific site
 site <- "08313000" #Otowi gauge
@@ -156,7 +157,7 @@ summary(m1)
 # check assumptions
 plot(m1)
 
-####GLM####
+####GLM for only one gauge and one river mile####
 # Filter data for a site with 12 zeros out of 14 values and 
 site <- "08313000" #otowi
 rivermile <- "167"
@@ -222,7 +223,7 @@ upstream2$RM<- upstream2$RMNum
 #merge upstream and data data set
 d <- merge(merged_data, upstream2, by = "RM")
 
-#### create list of data frames ####
+####create list of data frames ####
 # extract unique values of variables "site_no" and "RM"
 site_noz <- unique(d$site_no) 
 RMz <- unique(d$RM)
@@ -234,13 +235,21 @@ dfz$df_ID = paste(dfz$site_no, dfz$RM, sep="_")
 # an empty list called "alldfz" is created, which will be used to store individual data frames.
 alldfz = list()
 #loop over each unique value in "df_ID" column of "dfz" and filters "merged_data" for the corresponding values of "site_no" and "RM" to create individual data frames.
-#Finally, these data frames are stored as elements of the "alldfz" list with their corresponding names.
+#these data frames are stored as elements of the "alldfz" list with their corresponding names.
 for(i in dfz$df_ID){
   RMi = dfz$RM[dfz$df_ID==i]
   site_noi = dfz$site_no[dfz$df_ID==i]
   alldfz[[i]] = d %>%
     filter(site_no == site_noi, RM == RMi)
-} 
+  for(i in dfz){
+    pattern <- trimws(as.character(df_ID$site_no[1]))
+    dfzx <- i[, c(1:9, grep(pattern, names(i)))]
+  }
+}
+
+#hoow to delete all north/south columns minus the one for a specific data frame
+pattern <- trimws(as.character(x08330000_100$site_no[1]))
+x0833000_100x <- x08330000_100[, c(1:9, grep(pattern, names(x08330000_100)))]
 
 #remove river miles with less than 3 points of data (non-zero)
 # define  column to check
@@ -277,10 +286,7 @@ for (i in seq_along(alldfz_cleaned)) {
 print(zero_counts)
 
 #remove river upstream of gauges
-# vector of column names I would like to extract
-cols = c("X08313000", "X08317400", "X08319000", "X08329918", "X08329928", 
-          "X08330000","X08330830", "X08330875", "X08331160", "X08331510", 
-          "X08354900")
+
 # subset the list to remove data frames of RM upstream of gauges
 alldfz_downs <- lapply(alldfz_cleaned, function(df) { #create the function
   norths <- df[, cols][grep("north", df[, cols])]
@@ -294,9 +300,7 @@ alldfz_downs <- lapply(alldfz_cleaned, function(df) { #create the function
 #to remove any NULL elements that may have been created by the lapply 
 alldfz_downs <- alldfz_downs[!sapply(alldfz_downs, is.null)]
 
-rm ="Sum_days_rm_dry"
-g = "discharge_sum"
-
+#### GLM ####
 fit_glm <- lapply(alldfz_cleaned, function(df) {
   glm_poi <- glm(Sum_days_rm_dry ~ discharge_sum, 
       family = poisson(link = "log"), data = df)
