@@ -131,32 +131,6 @@ bernardo <- readNWISdata(siteNumbers = "08332010",
                           endDate = "2018-10-31",
                           service="dv")
 
-####linear models####
-
-# Filter data for a specific site
-site <- "08313000" #Otowi gauge
-RivMile <- "248" #RM for Otowi 257???
-site_year_data <- discharge_sum %>%
-  filter(site_no == site, RM == RivMile)
-
-# create the linear model
-m1 <- lm(Sum_days_rm_dry ~ discharge_sum, data = site_year_data)
-summary(m1)
-# check assumptions
-plot(m1)
-
-# Filter data for a specific site and year
-site_no <- "08313150"
-RM <- "54"
-site_year_data <- discharge_sum %>%
-  filter(site_no == site_no, RM == RM)
-
-# create the linear model
-m1 <- lm(Sum_days_rm_dry ~ discharge_sum, data = site_year_data)
-summary(m1)
-# check assumptions
-plot(m1)
-
 ####GLM for only one gauge and one river mile####
 # Filter data for a site with 12 zeros out of 14 values and 
 site <- "08313000" #otowi
@@ -223,9 +197,9 @@ upstream2$RM<- upstream2$RMNum
 #merge upstream and data data set
 d <- merge(merged_data, upstream2, by = "RM")
 
-####create list of data frames ####
+####create list of data frames and remove extra north/south gauge columns####
 # extract unique values of variables "site_no" and "RM"
-site_noz <- unique(d$site_no) 
+site_noz <- unique(d$site_no)
 RMz <- unique(d$RM)
 # create a data frame called "dfz" using the "expand.grid" function which generates a sequence of all combinations of the variables.
 dfz = expand.grid(site_noz, RMz)
@@ -241,65 +215,75 @@ for(i in dfz$df_ID){
   site_noi = dfz$site_no[dfz$df_ID==i]
   alldfz[[i]] = d %>%
     filter(site_no == site_noi, RM == RMi)
-  for(i in dfz){
-    pattern <- trimws(as.character(df_ID$site_no[1]))
-    dfzx <- i[, c(1:9, grep(pattern, names(i)))]
-  }
 }
-
-#hoow to delete all north/south columns minus the one for a specific data frame
+# Initialize an empty list to store the new data frames
+#alldfzx_list = list()
+# Loop over the data frames in alldfz and create a new data frame for each one
+#for(i in seq_along(alldfz)) {
+# site_noi <- alldfz[[i]]$site_no[1]
+# pattern <- trimws(as.character(site_noi))
+# alldfzx <- alldfz[[i]][, c(1:9, grep(pattern, names(alldfz[[i]])))]
+# Append the new data frame to the list
+# alldfzx_list[[i]] <- alldfzx
+#}
+# Initialize an empty list to store the new data frames
+alldfzx_list <- list()
+# Loop over the names of the data frames in alldfz and create a new data frame for each one
+for (name in names(alldfz)) {
+  site_noi <- alldfz[[name]]$site_no[1]
+  pattern <- trimws(as.character(site_noi))
+  alldfzx <- alldfz[[name]][, c(1:9, grep(pattern, names(alldfz[[name]])))]
+  # Append the new data frame to the list, using the original name as the list element name
+  alldfzx_list[[name]] <- alldfzx
+}
+#how to delete all north/south columns minus the one for a specific data frame
+x08330000_100 = alldfz[["08330000_100"]]
 pattern <- trimws(as.character(x08330000_100$site_no[1]))
 x0833000_100x <- x08330000_100[, c(1:9, grep(pattern, names(x08330000_100)))]
-
-#remove river miles with less than 3 points of data (non-zero)
+####remove river miles with less than 3 points of data (non-zero)####
 # define  column to check
 col <- "Sum_days_rm_dry"
 # subset the list to remove data frames with less than 3 non-zero values
-alldfz_cleaned <- lapply(alldfz, function(df) { #create the function
+alldfzx <- lapply(alldfzx_list, function(df) { #create the function
   sum_nonzero <- sum(!is.na(df[, col]) & df[, col]!= 0) #sum the number of zeros in the column and catch any na's
   if (sum_nonzero >= 3) { #if there are 2 or less zeros, apply function
     return(df)
   }
 })
-#to remove any NULL elements that may have been created by the lapply 
-alldfz_cleaned <- alldfz_cleaned[!sapply(alldfz_cleaned, is.null)]
-
+#to remove any NULL elements that may have been created by the lapply
+alldfzx <- alldfzx[!sapply(alldfzx, is.null)]
 ##verify that it worked
 # create a list to store the counts
 zero_counts <- list()
 # iterate over each data frame in the list
-for (i in seq_along(alldfz_cleaned)) {
+for (i in seq_along(alldfzx)) {
   # create a vector to store the counts for this data frame
-  alldfz_counts <- numeric(ncol(alldfz_cleaned[[i]]))
-  
+  alldfzx_counts <- numeric(ncol(alldfzx[[i]]))
   # iterate over each column in the data frame
-  for (j in seq_along(alldfz_cleaned[[i]])) {
+  for (j in seq_along(alldfzx[[i]])) {
     # count the number of zeros in the column
-    alldfz_counts[j] <- sum(alldfz_cleaned[[i]][, j] == 0, na.rm = TRUE)
+    alldfzx_counts[j] <- sum(alldfzx[[i]][, j] == 0, na.rm = TRUE)
   }
-  
   # add the counts for this data frame to the list
-  zero_counts[[i]] <- alldfz_counts
+  zero_counts[[i]] <- alldfzx_counts
 }
-
 # print the list of zero counts
 print(zero_counts)
 
-#remove river upstream of gauges
-
-# subset the list to remove data frames of RM upstream of gauges
-alldfz_downs <- lapply(alldfz_cleaned, function(df) { #create the function
-  norths <- df[, cols][grep("north", df[, cols])]
-  if (nrow(norths) > 0){
+####remove river upstream of gauges####
+# subset the list to remove data frames of RM upstream of gauges "north"
+alldfz_south <- lapply(alldfzx, function(df) { #create the function
+  if (df[nrow(df), ncol(df)] == "north") {
     return(NULL)  # return NULL instead of the original data frame
   } else {
     return(df)
   }
 })
 
-#to remove any NULL elements that may have been created by the lapply 
-alldfz_downs <- alldfz_downs[!sapply(alldfz_downs, is.null)]
 
+#to remove any NULL elements created by the lapply 
+alldfz_south <- alldfz_south[!sapply(alldfz_south, is.null)]
+capture.output(alldfz_south, file="Data/df_list.csv")
 #### GLM ####
 fit_glm <- lapply(alldfz_cleaned, function(df) {
   glm_poi <- glm(Sum_days_rm_dry ~ discharge_sum, 
