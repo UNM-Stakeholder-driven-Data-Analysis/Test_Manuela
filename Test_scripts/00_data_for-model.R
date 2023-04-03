@@ -283,15 +283,9 @@ alldfz_south <- lapply(alldfzx, function(df) { #create the function
 
 #to remove any NULL elements created by the lapply 
 alldfz_south <- alldfz_south[!sapply(alldfz_south, is.null)]
-capture.output(alldfz_south, file="Data/df_list.csv")
-#### GLM ####
-fit_glm <- lapply(alldfz_cleaned, function(df) {
-  glm_poi <- glm(Sum_days_rm_dry ~ discharge_sum, 
-      family = poisson(link = "log"), data = df)
-})
- 
-summary(fit_glm)
-plot(fit_glm)
+
+####save data frame list into computer####
+saveRDS(alldfz_south, file="Data/df_list.RData")
 
 
 
