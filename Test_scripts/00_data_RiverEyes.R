@@ -64,7 +64,6 @@ ggplot(data = Reyes, aes(x = RM, y = Year, fill = Condition))+
   theme(axis.text.x = element_text(angle = 90)) +
   theme(legend.position = "none")
 
-
 # can also look at single years in detail
 ggplot(data=Reyes, aes(x=RM, y= Year, fill = Condition))+
   geom_col() +
@@ -89,7 +88,7 @@ Annual_dry_rm$Sum_days_rm_dry = as.numeric(Annual_dry_rm$Sum_days_rm_dry)
 #merge the coordinates to my full data frame. I am doing this to perform 
 #the spatial autocorrelation but had to do it here before starting to mess with 
 #the data sets too much.
-#First I ned to get rid of the dublicate river miles in the latlong data frame
+#First I ned to get rid of the duplicate river miles in the latlong data frame
 # Remove rows with index 177, 156, 126, 111, 109, 78
 latlong <- latlong_o[-c(177, 156, 126, 111, 109, 78), ]
 

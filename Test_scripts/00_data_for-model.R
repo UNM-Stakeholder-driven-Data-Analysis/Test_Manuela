@@ -58,7 +58,7 @@ end.date = as.Date(end.date)
 
 #retrieve data for all dates on all 8 gages
 siteNumber <- c("08313000", "08317400", "08319000", "08329918", "08329928", 
-                "08330000", "08330830", "08330875", "08331160", "08331510", 
+                "08330000", "08330875", "08331160", "08331510", 
                 "08354900")
 #this code retrieves the discharge data
 pCode <- "00060"
@@ -197,7 +197,7 @@ upstream2$RM<- upstream2$RMNum
 #merge upstream and data data set
 d <- merge(merged_data, upstream2, by = "RM")
 
-####create list of data frames and remove extra north/south gauge columns####
+####create list of data frames####
 # extract unique values of variables "site_no" and "RM"
 site_noz <- unique(d$site_no)
 RMz <- unique(d$RM)
@@ -226,6 +226,7 @@ for(i in dfz$df_ID){
 # Append the new data frame to the list
 # alldfzx_list[[i]] <- alldfzx
 #}
+####remove extra north/south gauge columns####
 # Initialize an empty list to store the new data frames
 alldfzx_list <- list()
 # Loop over the names of the data frames in alldfz and create a new data frame for each one
