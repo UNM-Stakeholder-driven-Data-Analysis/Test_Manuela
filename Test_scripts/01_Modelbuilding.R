@@ -1,6 +1,6 @@
 ####READ ME####
-#The purpose of this script is to run a regression model to predict
-#drying in the Rio Grande
+#The purpose of this script is to run a regression model to obtain error values
+#then make a table with the gauge, RM, distance between RM and gauge and error of each GLM for that pair 
 
 ####Libraries ####
 library(tidyverse)
@@ -14,9 +14,12 @@ library(reshape2)
 
 ####load data frames list and distance matrix####
 alldf <- readRDS("Data/df_list.RData")
-dist_matrix <- read.csv("Data/distance_matrix.csv")
-colnames(dist_matrix) <- gsub("X", "", colnames(dist_matrix))
 
+dist_matri <- read.table("Data/distance_matrix.csv", sep = ",", header = TRUE)
+colnames(dist_matri)[1] <- "gauge"  
+#remove X from front of column names
+colnames(dist_matri) <- gsub("X", "", colnames(dist_matri))
+dist_matri$gauge <- paste0("0", dist_matri$gauge)
 #### GLM ####
 fit_glm <- lapply(alldf, function(df) {
   glm_all <- glm(Sum_days_rm_dry ~ discharge_sum, 
@@ -36,32 +39,15 @@ deviance_df <- data.frame(id = names(deviance), value = unlist(deviance))
 
 #separate the identifier column into two columns
 df <- separate(deviance_df, id, into = c("gauge", "RM"), sep = "_")
+df$gauge_RM <- paste(df$gauge, df$RM, sep = "_")
 
-#add distance matrix values to data frame
-#convert row names to character
-rownames(dist_matrix) <- as.character(rownames(dist_matrix))
-df_matrix <- melt(dist_matrix, value.name[1])
-df_matrix <- cbind(df_matrix, colsplit(df_matrix$variable, "_", names = c("gauge", "RM")))
-df_matrix <- spread(df_matrix, RM, value)
-?melt
-#get the row names of the distance matrix as a new column in the data frame
-df$gauge <- rownames(dist_matrix)[match(df$gauge, rownames(dist_matrix))]
+#create a new data frame from the distance matrix
+dist <- gather(dist_matri, key = "RM", value = "distance", -gauge)
+#create a new column with RM and gauge to use for merge
+dist$gauge_RM <- paste(dist$gauge, dist$RM, sep = "_")
 
-# Merge the two data frames using "gauge" and "RM" columns as keys
-merged_df <- merge(df, dist_matrix, by = c("gauge", "RM"))
-?melt
-
-####extract error, not the one that I need####
-#extracting coefficients for one 
-summary <- summary(fit_glm[["08313000_102"]])$coefficients
-#extracting error for one 
-error <- summary(fit_glm[["08313000_102"]])$coefficients[, 2]
-
-#extracting coefficients for all data frames
-glmsummary <- lapply(fit_glm, function(df) { #create the function
-  summary(df)$coefficients
-})
-#extracting error for all data frames
-glmserror <- lapply(fit_glm, function(df) { #create the function
-  summary(df)$coefficients[, 2]
-})
+#merge the two data frames
+# Merge data frames based on a common column
+merged <- merge(df, dist, by = "gauge_RM", all.x = TRUE)
+#fill in missing values in the new data frame merged with values from the distance data frame
+merged$distance <- ifelse(is.na(merged$distance), dist$distance, merged$distance)
