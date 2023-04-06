@@ -7,14 +7,14 @@ library(tidyverse)
 library(DHARMa)
 library(lme4) # for creating mixed models
 library(car) # for Anova(), vif()
-library(MuMIn) # for AICc
 library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
 library(data.table)
 library(reshape2)
 
 ####load data frames list and distance matrix####
+#model data frame list 
 alldf <- readRDS("Data/df_list.RData")
-
+#distance matrix
 dist_matri <- read.table("Data/distance_matrix.csv", sep = ",", header = TRUE)
 colnames(dist_matri)[1] <- "gauge"  
 #remove X from front of column names
@@ -51,3 +51,13 @@ dist$gauge_RM <- paste(dist$gauge, dist$RM, sep = "_")
 merged <- merge(df, dist, by = "gauge_RM", all.x = TRUE)
 #fill in missing values in the new data frame merged with values from the distance data frame
 merged$distance <- ifelse(is.na(merged$distance), dist$distance, merged$distance)
+
+#remove duplicate gauge and RM columns
+merged2 <- merged[,-5:-6]
+#rename some solumns
+colnames(merged2)[2] ="gauge"
+colnames(merged2)[3] ="RM"
+colnames(merged2)[4] ="deviance"
+
+#save final table
+write.csv(merged2, "Data/final_table.csv", row.names=TRUE)
