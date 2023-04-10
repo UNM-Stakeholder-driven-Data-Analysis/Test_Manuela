@@ -25,6 +25,10 @@ fit_glm <- lapply(alldf, function(df) {
   glm_all <- glm(Sum_days_rm_dry ~ discharge_sum, 
                  family = poisson(link = "log"), data = df)
 })
+
+#save models
+saveRDS(fit_glm, file="models.RData")
+
 #extract deviance#
 deviance <- lapply(fit_glm,function(df) { 
   summary(df)[["deviance"]]
