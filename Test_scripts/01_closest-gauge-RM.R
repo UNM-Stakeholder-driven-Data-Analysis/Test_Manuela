@@ -78,3 +78,7 @@ for (site in site){
 }
 #write csv into Data folder as upstream.csv
 write.csv(upstream,  "Data/upstream.csv", row.names = FALSE)
+
+#write csv for coordinates
+write.csv(coords1,  "Data/coords_gages.csv", row.names = FALSE)
+write.csv(coords2,  "Data/coords_RM.csv", row.names = FALSE)

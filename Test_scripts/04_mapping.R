@@ -2,6 +2,7 @@
 #The purpose of this script is to create a map showing the river gages along the Rio Grande
 
 ####libraries####
+library(dataRetrieval) #USGS data pagacke
 library(ggmap) # making maps
 library(rgdal) # changing projections
 library(broom) # pulling out data from shape files
@@ -45,8 +46,8 @@ ggmap(NM_basemap)
 ggmap(get_googlemap("New Mexico", maptype = "roadmap", zoom = 7))
 ####add points to a map####
 #obtain information available for a particular USGS site (or sites)
-siteInfo <- readNWISsite(c("08313000", "08313150", "08317400", "08319000", "08329918", "08329928", 
-                           "08330000", "08330830", "08330875", "08331160", "08331510", "08332010", 
+siteInfo <- readNWISsite(c("08313000", "08317400", "08319000", "08329918", "08329928", 
+                           "08330000", "08330875", "08331160", "08331510", "08332010", 
                            "08354900"))
 # find the range of longitude and latitude
 box <- siteInfo %>%
@@ -63,6 +64,20 @@ gauge_base <- get_map(location=c(left = box$left-buffer,
                                   top = box$top + buffer), 
                             provider = "stamen", maptype = 'terrain', source = 'stamen', scale = 10, zoom = 10)
 
+####include river miles#### 
+coords_RM <- read.csv("Data/coords_RM.csv" , header = TRUE)
+subset_coords <- coords_RM %>% filter(RMNum >= 54 & RMNum <= 167 & (RMNum-54) %% 10 == 0)
+
 # map it! the sensors are the red points
 ggmap(gauge_base) + 
   geom_point(data = siteInfo, aes(x = dec_long_va, y = dec_lat_va), size = 1.5, color = "red")
+
+# Create a ggmap object
+river_map <- ggmap(gauge_base)
+
+# Subset the coordinates you want to plot
+coords_subset <- coords[seq(54, 160, 10), ]
+
+# Add a layer to the map with the river coordinates
+river_map +
+  geom_line(data = coords_subset, aes(x = lon, y = lat), size = 1.5, color = "blue")

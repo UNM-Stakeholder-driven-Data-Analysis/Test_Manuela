@@ -57,12 +57,25 @@ sum(is.na(Reyes$Condition)) #no
 # plot all RM by number of days dry 
 options(scipen = 999)
 
-ggplot(data = Reyes, aes(x = RM, y = Year, fill = Condition))+
-  geom_col()+
-  ylab("Number of days") + xlab("Year") + ggtitle("Drying at individual river miles between 2003 and 2018")+
+Reyes$RM <- as.numeric(as.character(Reyes$RM))
+
+# Set fill colors and labels
+fill_colors <- c("#A2CEAA", "#4F6980")
+fill_labels <- c("Wet", "Dry")
+
+# Plot with fill colors and labels
+ggplot(data = Reyes, aes(x = RM, y = Year, fill = Condition)) +
+  geom_col() +
+  ylab("Number of days") + xlab("River Mile") +
+  ggtitle("Drying at individual river miles between 2003 and 2018") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90)) +
-  theme(legend.position = "none")
+  theme(legend.position = "bottom", 
+        legend.justification = "right") +
+  labs(fill = "Condition") +
+  scale_fill_manual(values = fill_colors, 
+                    labels = fill_labels) +
+  scale_x_continuous(breaks = seq(min(Reyes$RM), max(Reyes$RM), by = 5))
 
 # can also look at single years in detail
 ggplot(data=Reyes, aes(x=RM, y= Year, fill = Condition))+
