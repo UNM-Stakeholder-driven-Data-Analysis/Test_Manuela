@@ -8,21 +8,23 @@ library(tidyverse)
 library(DHARMa) #simulations
 library(lme4) # for creating mixed models
 library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
-library(pscl) #zero inflated
+library(glmmTMB) #zero inflated
 
-install.packages("pscl")
+install.packages("glmmTMB")
 ####load data frames list and distance matrix####
 #model data frame list 
 alldf <- readRDS("Data/df_list.RData")
 #### Zero-inflated Poisson ####
 fit_zip <- lapply(alldf, function(df) {
-  glm_all <- zeroinfl(Sum_days_rm_dry ~ discharge_sum | 1, 
-                      data = df,)
+  glm_all <- glmmTMB(Sum_days_rm_dry ~ discharge_sum, 
+                      data = df, ziformula = ~1, family = "poisson")
 })
+for(w in warnings()) {
+  message(w)
+}
 
-?zeroinfl
 #save models
-saveRDS(fit_glm, file="zip.models.RData")
+saveRDS(fit_zip, file="zip.models.RData")
 
 ####testing 10 random models####
 #simulate and plot residuals for one model
@@ -35,11 +37,16 @@ simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08330000_100"]])
 plot(simulationOutput, main = "Simulated Residuals 1")
 testZeroInflation(simulationOutput)
 testDispersion(simulationOutput) #Overdispersion describes the observation that variation is higher than would be expected.
+testTemporalAutocorrelation(simulationOutput, df$time,
+                            alternative = c("two.sided"), plot = T)
 #2
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08317400_133"]])
 plot(simulationOutput, main = "Simulated Residuals 2")
 testZeroInflation(simulationOutput)
 testDispersion(simulationOutput)
+testTemporalAutocorrelation(simulationOutput, df$time,
+                            alternative = c("two.sided"), plot = T)
+
 #3
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08331160_91"]])
 plot(simulationOutput, main = "Simulated Residuals 3")
