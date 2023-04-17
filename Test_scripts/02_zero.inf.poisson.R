@@ -10,7 +10,6 @@ library(lme4) # for creating mixed models
 library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
 library(glmmTMB) #zero inflated
 
-install.packages("glmmTMB")
 ####load data frames list and distance matrix####
 #model data frame list 
 alldf <- readRDS("Data/df_list.RData")
@@ -32,6 +31,7 @@ saveRDS(fit_zip, file="zip.models.RData")
 #deviation should not be significant
 #Zero inflation and dispersion if p-value small (less than ex 0.05) 
 #we reject the null hypothesis and residuals are zero inflated or overdispersed 
+
 #1
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08330000_100"]])
 plot(simulationOutput, main = "Simulated Residuals 1")
@@ -39,6 +39,7 @@ testZeroInflation(simulationOutput)
 testDispersion(simulationOutput) #Overdispersion describes the observation that variation is higher than would be expected.
 testTemporalAutocorrelation(simulationOutput, df$time,
                             alternative = c("two.sided"), plot = T)
+
 #2
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08317400_133"]])
 plot(simulationOutput, main = "Simulated Residuals 2")
@@ -52,16 +53,24 @@ simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08331160_91"]])
 plot(simulationOutput, main = "Simulated Residuals 3")
 testZeroInflation(simulationOutput)
 testDispersion(simulationOutput)
+testTemporalAutocorrelation(simulationOutput, df$time,
+                            alternative = c("two.sided"), plot = T)
 #4
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08330875_80"]])
 plot(simulationOutput,  main = "Simulated Residuals 4")
 testZeroInflation(simulationOutput)
 testDispersion(simulationOutput)
+testTemporalAutocorrelation(simulationOutput, df$time,
+                            alternative = c("two.sided"), plot = T)
+
 #5
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08317400_103"]])
 plot(simulationOutput, main = "Simulated Residuals 5")
 testZeroInflation(simulationOutput)
 testDispersion(simulationOutput)
+testTemporalAutocorrelation(simulationOutput, df$time,
+                            alternative = c("two.sided"), plot = T)
+
 #6
 simulationOutput <- simulateResiduals(fittedModel = fit_zip[["08329928_57"]])
 plot(simulationOutput, main = "Simulated Residuals 6")

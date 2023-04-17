@@ -55,6 +55,13 @@ box <- siteInfo %>%
             right = max(dec_long_va), 
             bottom = min(dec_lat_va), 
             top = max(dec_lat_va))
+####include river miles#### 
+coords_RM <- read.csv("Data/coords_RM.csv" , header = TRUE)
+subset_coords <- coords_RM %>% filter(RMNum >= 54 & RMNum <= 167 & (RMNum-54) %% 10 == 0)
+
+# Subset the coordinates you want to plot
+coords_subset <- coords_RM[seq(54, 160, 5), ]
+
 # i am going to a little bit so the points aren't on the edge of the screen
 buffer <- .1
 # create the base map using the coordinates and stamen
@@ -62,22 +69,22 @@ gauge_base <- get_map(location=c(left = box$left-buffer,
                                   bottom = box$bottom-buffer, 
                                   right = box$right + buffer, 
                                   top = box$top + buffer), 
-                            provider = "stamen", maptype = 'terrain', source = 'stamen', scale = 10, zoom = 10)
+                            provider = "stamen", maptype = 'toner-lite', scale = 10, zoom = 10)
 
-####include river miles#### 
-coords_RM <- read.csv("Data/coords_RM.csv" , header = TRUE)
-subset_coords <- coords_RM %>% filter(RMNum >= 54 & RMNum <= 167 & (RMNum-54) %% 10 == 0)
 
-# map it! the sensors are the red points
+# map it! the sensors are the red points RM are blue
 ggmap(gauge_base) + 
-  geom_point(data = siteInfo, aes(x = dec_long_va, y = dec_lat_va), size = 1.5, color = "red")
+  geom_point(data = siteInfo, aes(x = dec_long_va, y = dec_lat_va), size = 1.5, color = "red") +
+  geom_point(data = coords_subset, aes(x = longitude, y = latitude), size = 0.5, color = "blue")
+
+
+# map it with a line for RM instead of points
+ggmap(gauge_base) + 
+  geom_point(data = siteInfo, aes(x = dec_long_va, y = dec_lat_va), size = 1.5, color = "red") +
+  geom_line(data = coords_subset, aes(x = longitude, y = latitude), size = 0.5, color = "blue")
+
 
 # Create a ggmap object
 river_map <- ggmap(gauge_base)
 
-# Subset the coordinates you want to plot
-coords_subset <- coords[seq(54, 160, 10), ]
 
-# Add a layer to the map with the river coordinates
-river_map +
-  geom_line(data = coords_subset, aes(x = lon, y = lat), size = 1.5, color = "blue")

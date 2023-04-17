@@ -5,17 +5,15 @@
 ####Libraries ####
 library(tidyverse)
 library(DHARMa)
-library(lme4) # for creating mixed models
 library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
 library(data.table)
 library(reshape2)
+library(MASS)
 
 ####load data frames list and distance matrix####
 #model data frame list 
 alldf <- readRDS("Data/df_list.RData")
-####load data frames list and distance matrix####
-#model data frame list 
-alldf <- readRDS("Data/df_list.RData")
+
 #distance matrix
 dist_matri <- read.table("Data/distance_matrix.csv", sep = ",", header = TRUE)
 colnames(dist_matri)[1] <- "gauge"  
@@ -29,12 +27,6 @@ fit_nb <- lapply(alldf, function(df) {
 
 #save models
 saveRDS(fit_nb, file="nb.models.RData")
-
-#extract deviance#
-deviance <- lapply(fit_nb,function(df) { 
-  summary(df)[["deviance"]]
-})
-
 
 ####testing 10 random models####
 #simulate and plot residuals for one model
