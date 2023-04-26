@@ -6,8 +6,7 @@
 ####Libraries ####
 library(tidyverse)
 library(DHARMa) #simulations
-library(lme4) # for creating mixed models
-library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
+library(purrr)
 library(glmmTMB) #zero inflated
 
 ####load data frames list and distance matrix####
@@ -18,9 +17,25 @@ fit_zinb <- lapply(alldf, function(df) {
   glm_all <- glmmTMB(Sum_days_rm_dry ~ discharge_sum, 
                      data = df, ziformula = ~1, family = nbinom2)
 })
+summary_fit_zinb <- summary(fit_zinb)
+#You can also check directly whether the Hessian (curvature) of the model is OK by examining the pdHess ("positive-definite Hessian") component of the sdr ("standard deviation report") component of the model:
+pdHess_model <- lapply(fit_zinb, function(df){
+  pdHess <- df$sdr$pdHess
+})
+#In general models with non-positive definite Hessian matrices should be excluded from further consideration
+#A TRUE value indicates that the Hessian matrix of the corresponding model is positive-definite, while a FALSE value indicates that the Hessian matrix is not positive-definite.
+#In the context of model fitting, having a positive-definite Hessian matrix is generally desirable because it ensures that the model has a unique global minimum and that optimization algorithms can converge to that minimum efficiently. On the other hand, a non-positive-definite Hessian matrix implies that the model may have multiple minima or saddle points, which can make it difficult or impossible to find the true minimum of the objective function.
+#keep the TRUE 
+
+#combine the model output and true/false value into a single list element
+fit_zinb_tf <- function(fit_zinb, tf_value) {
+  list(output = fit_zinb, tf = tf_value)
+}
+# Use Map() function to apply the fit_zinb_tf function to each pair of list elements
+zinb_tf <- Map(fit_zinb_tf, fit_zinb, pdHess_model)
 
 #save models
-saveRDS(fit_zinb, file="zinb.models.RData")
+#saveRDS(fit_zinb, file="zinb.models.RData")
 
 ####testing 10 random models####
 #simulate and plot residuals for one model
@@ -29,59 +44,127 @@ saveRDS(fit_zinb, file="zinb.models.RData")
 #Zero inflation and dispersion if p-value small (less than ex 0.05) 
 #we reject the null hypothesis and residuals are zero inflated or overdispersed 
 #1
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08330000_100"]])
-plot(simulationOutput, main = "Simulated Residuals 1")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput) #Overdispersion describes the observation that variation is higher than would be expected.
-testTemporalAutocorrelation(simulationOutput, df$time,
+simulationOutput1 <- simulateResiduals(fittedModel = fit_zinb[["08330000_100"]])
+plot(simulationOutput1, main = "Simulated Residuals 1")
+testZeroInflation(simulationOutput1)
+testDispersion(simulationOutput1) #Overdispersion describes the observation that variation is higher than would be expected.
+testTemporalAutocorrelation(simulationOutput1, alldf[["08330000_100"]][["year"]],
                             alternative = c("two.sided"), plot = T)
+pdHess <- fit_zinb[["08330000_100"]]$sdr$pdHess
+
+
 #2
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08317400_133"]])
-plot(simulationOutput, main = "Simulated Residuals 2")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
-testTemporalAutocorrelation(simulationOutput, df$time,
+simulationOutput2 <- simulateResiduals(fittedModel = fit_zinb[["08317400_133"]])
+plot(simulationOutput2, main = "Simulated Residuals 2")
+testZeroInflation(simulationOutput2)
+testDispersion(simulationOutput2)
+testTemporalAutocorrelation(simulationOutput2, alldf[["08317400_133"]][["year"]],
                             alternative = c("two.sided"), plot = T)
+
 #3
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08331160_91"]])
-plot(simulationOutput, main = "Simulated Residuals 3")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
-testTemporalAutocorrelation(simulationOutput, df$time,
+simulationOutput3 <- simulateResiduals(fittedModel = fit_zinb[["08331160_91"]])
+plot(simulationOutput3, main = "Simulated Residuals 3")
+testZeroInflation(simulationOutput3)
+testDispersion(simulationOutput3)
+testTemporalAutocorrelation(simulationOutput3, alldf[["08331160_91"]][["year"]],
                             alternative = c("two.sided"), plot = T)
 #4
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08330875_80"]])
-plot(simulationOutput,  main = "Simulated Residuals 4")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput4 <- simulateResiduals(fittedModel = fit_zinb[["08330875_80"]])
+plot(simulationOutput4,  main = "Simulated Residuals 4")
+testZeroInflation(simulationOutput4)
+testDispersion(simulationOutput4)
+testTemporalAutocorrelation(simulationOutput4, alldf[["08330875_80"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
+
 #5
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08317400_103"]])
-plot(simulationOutput, main = "Simulated Residuals 5")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput5 <- simulateResiduals(fittedModel = fit_zinb[["08317400_103"]])
+plot(simulationOutput5, main = "Simulated Residuals 5")
+testZeroInflation(simulationOutput5)
+testDispersion(simulationOutput5)
+testTemporalAutocorrelation(simulationOutput5, alldf[["08317400_103"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
 #6
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08329928_57"]])
-plot(simulationOutput, main = "Simulated Residuals 6")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput6 <- simulateResiduals(fittedModel = fit_zinb[["08329928_57"]])
+plot(simulationOutput6, main = "Simulated Residuals 6")
+testZeroInflation(simulationOutput6)
+testDispersion(simulationOutput6)
+testTemporalAutocorrelation(simulationOutput6, alldf[["08329928_57"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
 #7
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08313000_70"]])
+simulationOutput7 <- simulateResiduals(fittedModel = fit_zinb[["08313000_70"]])
 plot(simulationOutput, main = "Simulated Residuals 7")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+testZeroInflation(simulationOutput7)
+testDispersion(simulationOutput7)
+testTemporalAutocorrelation(simulationOutput7, alldf[["08313000_70"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
 #8
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08313000_164"]])
-plot(simulationOutput, main = "Simulated Residuals 8")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput8 <- simulateResiduals(fittedModel = fit_zinb[["08313000_164"]])
+testUniformity(simulationOutput8, alternative = c("two.sided", "less", "greater"))
+plot(simulationOutput8, main = "Simulated Residuals 8")
+testZeroInflation(simulationOutput8)
+dispersion8 <- testDispersion(simulationOutput8)
+#getting p-value for dispersion test
+pvalue <- dispersion8[["p.value"]]
+testTemporalAutocorrelation(simulationOutput8, alldf[["08313000_164"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
+
 #9
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08331160_66"]])
-plot(simulationOutput, main = "Simulated Residuals 9")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput9 <- simulateResiduals(fittedModel = fit_zinb[["08331160_66"]])
+plot(simulationOutput9, main = "Simulated Residuals 9")
+testZeroInflation(simulationOutput9)
+testDispersion(simulationOutput9)
+testTemporalAutocorrelation(simulationOutput9, alldf[["08331160_66"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
 #10
-simulationOutput <- simulateResiduals(fittedModel = fit_zinb[["08319000_123"]])
-plot(simulationOutput, main = "Simulated Residuals 10")
-testZeroInflation(simulationOutput)
-testDispersion(simulationOutput)
+simulationOutput10 <- simulateResiduals(fittedModel = fit_zinb[["08319000_123"]])
+plot(simulationOutput10, main = "Simulated Residuals 10")
+testZeroInflation(simulationOutput10)
+testDispersion(simulationOutput10)
+testTemporalAutocorrelation(simulationOutput10, alldf[["08319000_123"]][["year"]],
+                            alternative = c("two.sided"), plot = T)
+
+####remove non convergent models (false)tf#### 
+#I am doing this after testing the 10 random models in case I need to go back and check them
+# Use the Filter() function to keep only the elements where tf is TRUE
+zinb_true <- Filter(function(x) x$tf, zinb_tf)
+zinb_true <- filter(zinb_tf, tf)
+#remove tf to run DHARMa
+# Use map() from purrr to extract the first element from each list
+zinb <- map(zinb_true, 1)
+
+####test all remaining (true) models####
+simulationOutput <- lapply(zinb, function(df) {
+  simulateResiduals(fittedModel = df)
+})
+simulationOutput_zi <- lapply(simulationOutput, function(df) {
+  testZeroInflation(df) 
+})
+simulationOutput_dispersion <- lapply(simulationOutput, function(df) {
+  testDispersion(df) 
+})
+
+simulationOutput_590 <- lapply(fit_zinb, function(df) {
+  simulateResiduals(fittedModel = df)
+})
+simulationOutput_temp <- lapply(simulationOutput_590, function(df) {
+  years <- lapply(alldf, function(x) x[["year"]])
+  testTemporalAutocorrelation(df, years, alternative = "two.sided", plot = F)
+})
+
+
+####p-values for dispersion test####
+#extract p-values
+pvalue_dispersion<- lapply(simulationOutput_dispersion, function(df) {
+ df[["p.value"]]
+})
+
+#list p-values under/over 0.05
+pvalule_0.05 <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
+pvalule_0.05 <- subset(pvalue_dispersion, pvalue_dispersion <=0.3)
+
+
+#remove non converged models or assign them a really high error value.
+#for example assign a bad error to the bad models and include them later. 
+#extract KS for remaining models
+#extract error
 

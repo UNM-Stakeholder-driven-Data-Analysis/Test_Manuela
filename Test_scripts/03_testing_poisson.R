@@ -16,6 +16,12 @@ hist(df$deviance)
 hist(df$distance)
 plot(deviance ~ distance, data = df)
 
+hist(merged2$deviance)
+hist(merged2$distance)
+plot(deviance ~ distance, data = merged2)
+plot(distance ~ deviance, data = merged2)
+is.na(merged2$distance)
+
 ####testing####
 #pull 10 models out randomly and check for over dispersion
 #test for temporal autocorrelation

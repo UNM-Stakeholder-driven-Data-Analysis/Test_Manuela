@@ -28,7 +28,7 @@ fit_poisson <- lapply(alldf, function(df) {
 #save models
 saveRDS(fit_poisson, file="models.RData")
 
-#extract deviance#
+#extract deviance
 deviance <- lapply(fit_poisson,function(df) { 
   summary(df)[["deviance"]]
 })

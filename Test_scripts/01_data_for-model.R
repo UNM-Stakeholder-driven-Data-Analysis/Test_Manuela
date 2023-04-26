@@ -97,6 +97,9 @@ discharge_sum <- discharge %>%
   group_by(site_no, year) %>%
   summarise(discharge_sum = sum(X_00060_00003))
 
+#make new data frame with gage names insteead of numbers
+write.csv(discharge_sum, file = "discharge_sum.csv", row.names = FALSE)
+discharge_plot <- read.csv("discharge.csv")
 ####merging USGS sum discharge and River Eyes data frames####
 Annual_dry_rm$year <- Annual_dry_rm$Year
 merged_data <- merge(discharge_sum, Annual_dry_rm, by = "year")
@@ -111,10 +114,13 @@ ggplot(data=discharge_sum, aes(x=year, y=discharge_sum))+
   theme_bw()
 
 # plot all gauges together
-ggplot(data=discharge_sum, aes(x=year, y=discharge_sum, color=site_no))+
+ggplot(data=discharge_plot, aes(x=year, y=discharge_sum, color=site_no))+
   geom_point() + geom_path()+
   theme(legend.title = element_blank()) +
-  theme_bw()
+  theme_bw() +
+  ylab("discharge") +
+  labs(color = "Site Number")
+
 
 ####trouble shooting missing values####
 # retrieve data for White Rock and Bernardo
