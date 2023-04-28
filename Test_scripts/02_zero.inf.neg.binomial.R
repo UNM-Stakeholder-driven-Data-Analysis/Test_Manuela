@@ -51,7 +51,7 @@ testDispersion(simulationOutput1) #Overdispersion describes the observation that
 testTemporalAutocorrelation(simulationOutput1, alldf[["08330000_100"]][["year"]],
                             alternative = c("two.sided"), plot = T)
 pdHess <- fit_zinb[["08330000_100"]]$sdr$pdHess
-
+ks1 <- testUniformity(simulationOutput1)
 
 #2
 simulationOutput2 <- simulateResiduals(fittedModel = fit_zinb[["08317400_133"]])
@@ -107,7 +107,6 @@ dispersion8 <- testDispersion(simulationOutput8)
 pvalue <- dispersion8[["p.value"]]
 testTemporalAutocorrelation(simulationOutput8, alldf[["08313000_164"]][["year"]],
                             alternative = c("two.sided"), plot = T)
-
 #9
 simulationOutput9 <- simulateResiduals(fittedModel = fit_zinb[["08331160_66"]])
 plot(simulationOutput9, main = "Simulated Residuals 9")
@@ -127,7 +126,7 @@ testTemporalAutocorrelation(simulationOutput10, alldf[["08319000_123"]][["year"]
 #I am doing this after testing the 10 random models in case I need to go back and check them
 # Use the Filter() function to keep only the elements where tf is TRUE
 zinb_true <- Filter(function(x) x$tf, zinb_tf)
-zinb_true <- filter(zinb_tf, tf)
+
 #remove tf to run DHARMa
 # Use map() from purrr to extract the first element from each list
 zinb <- map(zinb_true, 1)
@@ -146,21 +145,44 @@ simulationOutput_dispersion <- lapply(simulationOutput, function(df) {
 simulationOutput_590 <- lapply(fit_zinb, function(df) {
   simulateResiduals(fittedModel = df)
 })
+year <- seq(from = 1, to = nrow(alldf))
 simulationOutput_temp <- lapply(simulationOutput_590, function(df) {
-  years <- lapply(alldf, function(x) x[["year"]])
-  testTemporalAutocorrelation(df, years, alternative = "two.sided", plot = F)
+  testTemporalAutocorrelation(df, year, alternative = "two.sided")
+})
+#run ks test again independently (from the simulation output)
+ks <- lapply(simulationOutput, function(df) {
+  testUniformity(df)
 })
 
+####filtering by KS####
+#extract KS for remaining models
+pvalue_ks<- lapply(ks, function(df) {
+  df[["p.value"]]
+})
+
+#testing. Retain p-values over 0.05 for ks
+pvalule_0.05_ks <- subset(pvalue_ks, pvalue_ks >=0.05)
+#because there are a few models that have pvalues under 0.05, I'll remove them
+
+#combine the model output and ks value into a single list element
+funct_zinb_ks <- function(zinb, pvalue_ks) {
+  list(output = zinb, ks = pvalue_ks)
+}
+#use Map() function to apply the fit_zinb_tf function to each pair of list elements
+zinb_ks <- Map(funct_zinb_ks, zinb, pvalue_ks)
+
+#remove all the models that have a ks under using the Filter() function
+zinb_5 <- Filter(function(x) x$ks>=0.05, zinb_ks)
 
 ####p-values for dispersion test####
 #extract p-values
 pvalue_dispersion<- lapply(simulationOutput_dispersion, function(df) {
  df[["p.value"]]
 })
-
-#list p-values under/over 0.05
-pvalule_0.05 <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
-pvalule_0.05 <- subset(pvalue_dispersion, pvalue_dispersion <=0.3)
+#dispersion
+#testing. Retain p-values over 0.05 for dispersion
+pvalue_0.05_disp <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
+#there are no dispersion tests that have a p-value under 0.05.
 
 
 #remove non converged models or assign them a really high error value.
@@ -168,3 +190,11 @@ pvalule_0.05 <- subset(pvalue_dispersion, pvalue_dispersion <=0.3)
 #extract KS for remaining models
 #extract error
 
+#McFadden's pseudo R2 
+#i want a higher value of it
+#try the written down formula to make sure that the funsction from the package 
+#handles the model correctly because the package is made for a logistic
+#regression. the package says that it can handle glm model
+#but it specifies a logistic regression. the zero inflated ones can be 
+#logistic regression but because I am using a zero inflated model, i should verify that 
+#it works before trusting it.
