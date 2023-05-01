@@ -1,7 +1,7 @@
 ####READ ME####
-#The purpose of this script is to run a zero-inflated negative binomial model to obtain error values
-#then make a table with the gauge, RM, distance between RM and gauge and error of each GLM for that pair 
-#then, I will test the negative binomial regression model using DHARMa residual simulations.
+#The purpose of this script is to run a zero-inflated negative binomial model 
+# to test models for convergence and compare with the other models ran.
+# test the model using DHARMa residual simulations and discard the models that don't have a good fit
 
 ####Libraries ####
 library(tidyverse)
@@ -184,6 +184,8 @@ pvalue_dispersion<- lapply(simulationOutput_dispersion, function(df) {
 pvalue_0.05_disp <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
 #there are no dispersion tests that have a p-value under 0.05.
 
+#save remaining models after cleaning 
+saveRDS(zinb, file="Data/zinb_models.RData")
 
 #remove non converged models or assign them a really high error value.
 #for example assign a bad error to the bad models and include them later. 
@@ -192,9 +194,9 @@ pvalue_0.05_disp <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
 
 #McFadden's pseudo R2 
 #i want a higher value of it
-#try the written down formula to make sure that the funsction from the package 
+#try the written down formula to make sure that the function from the package 
 #handles the model correctly because the package is made for a logistic
 #regression. the package says that it can handle glm model
 #but it specifies a logistic regression. the zero inflated ones can be 
-#logistic regression but because I am using a zero inflated model, i should verify that 
+#logistic regression but because I am using a zero inflated model, I should verify that 
 #it works before trusting it.
