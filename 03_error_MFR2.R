@@ -7,11 +7,13 @@ library(DescTools) #logLik (McFadden’s R2)
 library(purrr)
 
 ####load models and data####
-zinb_5 <- readRDS("zinb_models.RData")
+zinb_5 <- readRDS("Data/zinb_models.RData")
+#model data frame list 
+alldf <- readRDS("Data/df_list.RData")
 
 ####test McFadden’s R2 with one model####
 #take one model from my model list
-example <- zinb_5[["08317400_100"]][["output"]]
+example <- zinb_5[["08317400_100"]]
 #calculate the log-likelihood of the fitted model
 loglik_model <- logLik(example)
 
@@ -32,7 +34,7 @@ MFR2_example
 ####compute McFadden for all models####
 #remove ks from list to run logLik function
 # Use map() from purrr to extract the first element from each list
-zinb <- map(zinb_5, 1)
+#zinb <- map(zinb_5, 1)
 
 #run logLik for model list
 loglik_zinb <- list()    
@@ -40,7 +42,6 @@ for (i in seq_along(zinb)) {
   output <- logLik(zinb[[i]])
   loglik_zinb[[i]] <- output
 }
-
 
 #run logLik for null model list
 loglik_null <- list()    
@@ -52,7 +53,7 @@ for (i in seq_along(null_all)) {
 #compute McFadden's R-squared for all models
 loglik_list <- list()  
 for (name in names(zinb)) {
-  output <- 1 - (logLik(zinb[[name]])/logLik(null_all[[name]]))
+  output <- 1 - (logLik(zinb_5[[name]])/logLik(null_all[[name]]))
   loglik_list[[name]] <- output
 }
 

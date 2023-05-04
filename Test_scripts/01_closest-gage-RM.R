@@ -35,6 +35,10 @@ rownames(dist_mat) <- coords1$site_no
 colnames(dist_mat) <- coords2$RMNum
 dist_matrix <- dist_mat
 
+#making sure distances are ok
+distm(c(-106.1424, 35.87450), c(-106.7153, 34.82602), fun = distHaversine)
+distm(c(-106.6519, 35.18200), c(-106.8503, 33.93070), fun = distHaversine)
+
 #save distance matrix
 write.csv(dist_matrix, "Data/distance_matrix.csv", row.names=TRUE)
 

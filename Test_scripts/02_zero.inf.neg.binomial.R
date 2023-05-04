@@ -22,6 +22,8 @@ summary_fit_zinb <- summary(fit_zinb)
 pdHess_model <- lapply(fit_zinb, function(df){
   pdHess <- df$sdr$pdHess
 })
+#OR
+fit_zinb <- readRDS("Data/zinb_models.RData")
 #In general models with non-positive definite Hessian matrices should be excluded from further consideration
 #A TRUE value indicates that the Hessian matrix of the corresponding model is positive-definite, while a FALSE value indicates that the Hessian matrix is not positive-definite.
 #In the context of model fitting, having a positive-definite Hessian matrix is generally desirable because it ensures that the model has a unique global minimum and that optimization algorithms can converge to that minimum efficiently. On the other hand, a non-positive-definite Hessian matrix implies that the model may have multiple minima or saddle points, which can make it difficult or impossible to find the true minimum of the objective function.
@@ -35,7 +37,7 @@ fit_zinb_tf <- function(fit_zinb, tf_value) {
 zinb_tf <- Map(fit_zinb_tf, fit_zinb, pdHess_model)
 
 #save models
-#saveRDS(fit_zinb, file="zinb.models.RData")
+saveRDS(fit_zinb, file="zinb.models.RData")
 
 ####testing 10 random models####
 #simulate and plot residuals for one model
@@ -145,10 +147,11 @@ simulationOutput_dispersion <- lapply(simulationOutput, function(df) {
 simulationOutput_590 <- lapply(fit_zinb, function(df) {
   simulateResiduals(fittedModel = df)
 })
-year <- seq(from = 1, to = nrow(alldf))
-simulationOutput_temp <- lapply(simulationOutput_590, function(df) {
-  testTemporalAutocorrelation(df, year, alternative = "two.sided")
-})
+#still need this to work
+#year <- seq(from = 1, to = nrow(alldf))
+#simulationOutput_temp <- lapply(simulationOutput_590, function(df) {
+ # testTemporalAutocorrelation(df, year, alternative = "two.sided")
+#})
 #run ks test again independently (from the simulation output)
 ks <- lapply(simulationOutput, function(df) {
   testUniformity(df)
