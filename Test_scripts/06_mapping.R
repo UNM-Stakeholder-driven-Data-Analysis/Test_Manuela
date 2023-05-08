@@ -44,6 +44,7 @@ NM_basemap <- get_map(location=c(left = -111, bottom = 30, right = -101, top = 3
 ggmap(NM_basemap)
 
 ggmap(get_googlemap("New Mexico", maptype = "roadmap", zoom = 7))
+
 ####add points to a map####
 #obtain information available for a particular USGS site (or sites)
 siteInfo <- readNWISsite(c("08313000", "08317400", "08319000", "08329918", "08329928", 
@@ -55,6 +56,7 @@ box <- siteInfo %>%
             right = max(dec_long_va), 
             bottom = min(dec_lat_va), 
             top = max(dec_lat_va))
+
 ####include river miles#### 
 coords_RM <- read.csv("Data/coords_RM.csv" , header = TRUE)
 subset_coords <- coords_RM %>% filter(RMNum >= 54 & RMNum <= 167 & (RMNum-54) %% 10 == 0)
