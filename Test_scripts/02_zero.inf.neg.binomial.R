@@ -147,7 +147,7 @@ simulationOutput_dispersion <- lapply(simulationOutput, function(df) {
 simulationOutput_590 <- lapply(fit_zinb, function(df) {
   simulateResiduals(fittedModel = df)
 })
-#still need this to work
+#still need to get this to work
 #year <- seq(from = 1, to = nrow(alldf))
 #simulationOutput_temp <- lapply(simulationOutput_590, function(df) {
  # testTemporalAutocorrelation(df, year, alternative = "two.sided")

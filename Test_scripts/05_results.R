@@ -25,10 +25,10 @@ merged2 <- read.table("Data/final_df.csv", sep = ",", header = TRUE)
 
 #making gauge name df to make figures
 gauge <- c("8313000", "8317400", "8319000", "8329918", "8329928", "8330000",
-           "8330830", "8330875", "8331160", "8331510", "8354900")
+           "8330875", "8331160", "8331510", "8354900")
 name <- c("1. Otowi", "2. Cochiti Dam", "3. San Felipe", "4. Alameda Bridge", "5. Alameda",
-          "6. Albuquerque", "7. Valle de Oro", "8. Isleta", "9. Bosque Farms",
-          "10. St. Hwy 346", "11. San Acacia")
+          "6. Albuquerque", "7. Isleta", "8. Bosque Farms",
+          "9. St. Hwy 346", "10. San Acacia")
 #make data frame
 gauge_name <- cbind(gauge, name)
 
@@ -39,6 +39,7 @@ merged2$RM <- as.numeric(merged2$RM)
 
 #changing distance from m to km
 merged2$distance <- merged2$distance / 1000
+
 
 ####plotting data just to look at it####
 #distribution of McFadden's r-squared values
@@ -78,7 +79,7 @@ ggplot(data=merged2, aes(x=RM, y=MFR2, )) +
   #specify X breaks of approximately equal size for x axis
   scale_x_continuous(breaks=seq(54, 200, 20)) 
 
-#look at error by RM
+#look at distance by RM
 ggplot(data=merged2, aes(x=RM, y=distance)) +
   geom_point(shape = 21, fill = "transparent", size = 1) +
   facet_wrap(~name, scales="free_y")+
@@ -96,11 +97,11 @@ ggplot(data=low_RM, aes(x=distance, y=MFR2)) +
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "distance (km)")
+  labs(x = "distance (km)") +
   theme_bw()
 #look at error by RM
 ggplot(data=low_RM, aes(x=RM, y=MFR2)) +
-  geom_point() +
+  geom_point(shape = 21, fill = "transparent", size = 1) +
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -108,13 +109,12 @@ ggplot(data=low_RM, aes(x=RM, y=MFR2)) +
 
 #look at error by RM from RM 50 to 100
 high_RM <- merged2 %>% filter(RM %in% (100:165))
-
 ggplot(data=high_RM, aes(x=distance, y=MFR2)) +
   geom_point(shape = 21, fill = "transparent", size = 1)  +
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "distance (km)")
+  labs(x = "distance (km)") +
   theme_bw()
   
 #look at error by RM
@@ -164,5 +164,24 @@ ggplot(data=MFR2_1, aes(x=RM, y=distance)) +
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   theme_bw()
+
+####stats and other results####
+mean(merged2$MFR2)
+gage_points <- table(merged2['name'])
+gage_points <- as.data.frame(gage_points)
+gage_points$Freq <- as.numeric(gage_points$Freq)
+sum(gage_points$Freq) # 427
+
+#plot gage points
+#remove numbers from names for plot
+gage_points$name <- gsub("^\\d+\\.\\s", "", gage_points$name)
+#keep same order of facet wrap plots
+gage_points$name <- factor(gage_points$name, levels = c("Otowi", "Cochiti Dam", "San Felipe", "Alameda Bridge", "Alameda",
+                                                "Albuquerque", "Valle de Oro", "Isleta", "Bosque Farms",
+                                                "St. Hwy 346", "San Acacia"))
+ggplot(gage_points, aes(x=name, y=Freq)) + 
+  geom_bar(stat = "identity", color = "black", fill = "cornflowerblue") +
+  geom_text(aes(label=Freq), vjust=-0.3, size=3.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 

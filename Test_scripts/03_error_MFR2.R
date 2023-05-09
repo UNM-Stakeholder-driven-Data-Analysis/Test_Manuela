@@ -1,12 +1,13 @@
 ####READ ME####
-#The purpose of this script is to extract the error from the zinb movel
+#The purpose of this script is to extract the error from the zinb model
 #in this case I am going to use McFadden's pseudo R2.
+
 ####libraries####
 library(glmmTMB) #zero inflated
 library(DescTools) #logLik (McFadden’s R2)
 library(purrr)
 
-####load models and data####
+####load model####
 zinb_5 <- readRDS("zinb_models.RData")
 
 ####test McFadden’s R2 with one model####
