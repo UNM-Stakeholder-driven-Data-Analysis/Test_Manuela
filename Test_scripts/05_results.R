@@ -44,7 +44,7 @@ merged2$distance <- merged2$distance / 1000
 ####plotting data just to look at it####
 #distribution of McFadden's r-squared values
 ggplot(merged2, aes(x = MFR2)) +
-  geom_histogram(color = "black", fill = "cornflowerblue", bins = 100) +
+  geom_histogram(fill = "cornflowerblue", bins = 100) +
   labs(title = "Distribution of McFadden's r-squared values",
        x = "MFR2",
        y = "Frequency")
@@ -54,8 +54,8 @@ plot(MFR2 ~ distance, data = merged2)
 
 # Change order of facet wrap plots
 merged2$name <- factor(merged2$name, levels = c("1. Otowi", "2. Cochiti Dam", "3. San Felipe", "4. Alameda Bridge", "5. Alameda",
-                                                 "6. Albuquerque", "7. Valle de Oro", "8. Isleta", "9. Bosque Farms",
-                                                 "10. St. Hwy 346", "11. San Acacia"))
+                                                 "6. Albuquerque", "7. Isleta", "8. Bosque Farms",
+                                                 "9. St. Hwy 346", "10. San Acacia"))
 
 
 #look at single gauges in detail
@@ -64,16 +64,16 @@ ggplot(data=merged2, aes(x=distance, y=MFR2))+
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank()) +
   labs(x = "distance (km)") +
-  scale_y_continuous(limits = c(0, 0.41)) +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme_bw() 
 
 
-#look at error by RM
+#look at MFR2 by RM
 ggplot(data=merged2, aes(x=RM, y=MFR2, )) +
   geom_point(shape = 21, fill = "transparent", size = 1) +
   facet_wrap(~name, scales="free_y")+
   theme_bw() +
-  scale_y_continuous(limits = c(0, 0.41)) +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   labs(x = "River Miles") +
   #specify X breaks of approximately equal size for x axis
@@ -98,6 +98,7 @@ ggplot(data=low_RM, aes(x=distance, y=MFR2)) +
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "distance (km)") +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme_bw()
 #look at error by RM
 ggplot(data=low_RM, aes(x=RM, y=MFR2)) +
@@ -105,6 +106,7 @@ ggplot(data=low_RM, aes(x=RM, y=MFR2)) +
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme_bw()
 
 #look at error by RM from RM 50 to 100
@@ -115,32 +117,17 @@ ggplot(data=high_RM, aes(x=distance, y=MFR2)) +
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "distance (km)") +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme_bw()
   
 #look at error by RM
 ggplot(data=high_RM, aes(x=RM, y=MFR2)) +
-  geom_point() +
+  geom_point(shape = 21, fill = "transparent", size = 1) +
   facet_wrap(~name, scales="free_y")+
   theme(legend.title = element_blank(), 
         axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(limits = c(-.01, 0.44)) +
   theme_bw()
-
-
-#look at error by RM from RM 50 to 100
-ggplot(data=low_RM, aes(x=RM, y=MFR2)) +
-  geom_point(shape = 21, fill = "transparent", size = 1)  +
-  facet_wrap(~name, scales="free_y")+
-  theme(legend.title = element_blank(), 
-        axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_bw()
-
-
-ggplot(data = merged3, aes(x = RM, y = MFR2, color = RM) +
-         geom_point(shape = 21, fill = "transparent", size = 1)  +
-         scale_color_gradient(low = "blue", high = "red") +
-         theme(legend.title = element_blank()) +
-         theme_bw()
-)
 
 ####testing models vs goodness of fit####
 #look at models, if lower MFR2 is really a worse model than ones with higher MFR2
@@ -180,8 +167,8 @@ gage_points$name <- factor(gage_points$name, levels = c("Otowi", "Cochiti Dam", 
                                                 "Albuquerque", "Valle de Oro", "Isleta", "Bosque Farms",
                                                 "St. Hwy 346", "San Acacia"))
 ggplot(gage_points, aes(x=name, y=Freq)) + 
-  geom_bar(stat = "identity", color = "black", fill = "cornflowerblue") +
-  geom_text(aes(label=Freq), vjust=-0.3, size=3.5) +
+  geom_bar(stat = "identity", fill = "cornflowerblue") +
+  geom_text(aes(label="points"), vjust=-0.3, size=3.5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
