@@ -1,7 +1,7 @@
 #### read me ####
 
 # The purpose of this script is to explore my River Eyes data, including
-# - describing dataset size (# variables & # observations)
+# - describing data set size (# variables & # observations)
 # - describing data types
 # - checking data distributions
 # - checking for spatial autocorrelation
@@ -91,20 +91,21 @@ ggplot(data=Reyes, aes(x=RM, y= Year, fill = Condition))+
 #Annual_dry_rm <- Reyes %>% 
 #  mutate(Yr = lubridate::year(Date)) %>%
 #  group_by(Year, RM) %>% 
-# summarise(Sum_days_rm_dry = sum(Condition.b))
+# summarize(Sum_days_rm_dry = sum(Condition.b))
 
 # convert characters that should be numeric
 # and int that should be date (the year)
 Annual_dry_rm$Sum_days_rm_dry = as.numeric(Annual_dry_rm$Sum_days_rm_dry)
-#Annual_dry_rm$Year = as.Date(Annual_dry_rm$Year, format="%y") DOES THIS WORK WITH JUST ONE YEAT?
+#Annual_dry_rm$Year = as.Date(Annual_dry_rm$Year, format="%y") DOES THIS WORK WITH JUST ONE YEAR?
 
 #merge the coordinates to my full data frame. I am doing this to perform 
 #the spatial autocorrelation but had to do it here before starting to mess with 
 #the data sets too much.
-#First I ned to get rid of the duplicate river miles in the latlong data frame
+#First I need to get rid of the duplicate river miles in the latlong data frame
 # Remove rows with index 177, 156, 126, 111, 109, 78
 latlong <- latlong_o[-c(177, 156, 126, 111, 109, 78), ]
 
+#notes:
 #177 fid 176 rm 68
 #156 fid 155 rm 87
 #111 fid 110 rm 130
@@ -153,7 +154,7 @@ qqPlot(Annual_dry_rm$Sum_days_rm_dry); shapiro.test(Annual_dry_rm$Sum_days_rm_dr
 # p-value if it is really really low (usually bellow 0.05)) then you don't have normal data
 # if it is high, then it is normal
 
-##to cacluate spread out RM
+##to calcuate spread out RM
 #numbericRM <- as.numeric(Annual_dry_rm$RM)
 #med=median(numbericRM) = 113
 #quantile(numbericRM) = 25%=83, 75=140

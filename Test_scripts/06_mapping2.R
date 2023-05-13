@@ -14,7 +14,7 @@ library(sp) # helpful for maps
 
 ####this is my key####
 #add AIzaS to start of key
-api_secret <- "yA2hxrVEEzF45kbWfDphd_gvZTMn0503lw"
+api_secret <- "AIzaSyA2hxrVEEzF45kbWfDphd_gvZTMn0503lw"
 register_google(key = api_secret)
 
 #NM map
@@ -22,7 +22,7 @@ nm_map <- get_map(getbb('NM'), source="stamen",
                   maptype="terrain-background")
 ggmap(nm_map)
 
-#map using API functions
+#map using API functions #this one does not work as well
 NM_satellite <- get_map(location = "New Mexico", maptype="terrain", source="stamen", api_key = api_secret)
 ggmap(NM_satellite)
 #to zoom in or out of map
@@ -150,6 +150,6 @@ usa_rivers_df <- as.data.frame(usa_rivers_coords)
 #plot the map
 ggmap(nm_map) +
   # Add the rivers as lines
-  geom_point(data = usa_rivers_df, aes(x = X, y = Y), color = "lightblue", size = 0.05)
+  geom_point(data = usa_rivers_df, aes(x = X, y = Y), color = "navy", size = 0.05)
 
 

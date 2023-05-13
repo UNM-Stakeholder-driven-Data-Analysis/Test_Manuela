@@ -22,7 +22,7 @@ summary_fit_zinb <- summary(fit_zinb)
 pdHess_model <- lapply(fit_zinb, function(df){
   pdHess <- df$sdr$pdHess
 })
-#OR
+#OR load model already run (it's faster)
 fit_zinb <- readRDS("Data/zinb_models.RData")
 #In general models with non-positive definite Hessian matrices should be excluded from further consideration
 #A TRUE value indicates that the Hessian matrix of the corresponding model is positive-definite, while a FALSE value indicates that the Hessian matrix is not positive-definite.
@@ -190,13 +190,14 @@ pvalue_0.05_disp <- subset(pvalue_dispersion, pvalue_dispersion >=0.05)
 #save remaining models after cleaning 
 saveRDS(zinb, file="Data/zinb_models.RData")
 
+#notes to self:
 #remove non converged models or assign them a really high error value.
 #for example assign a bad error to the bad models and include them later. 
 #extract KS for remaining models
-#extract error
+#extract error to be used 
 
 #McFadden's pseudo R2 
-#i want a higher value of it
+#I want a higher value of it
 #try the written down formula to make sure that the function from the package 
 #handles the model correctly because the package is made for a logistic
 #regression. the package says that it can handle glm model
